@@ -288,7 +288,7 @@ export default function App() {
                 disabled={!sesi.events.length}
                 title="Spasi untuk Putar / Jeda"
               >
-                {main ? "⏸ Jeda" : "▶ Putar"}
+                {main ? "Jeda" : "Putar"}
               </button>
               <button
                 type="button"
@@ -382,7 +382,7 @@ export default function App() {
           <section className="panel code-viewer-panel">
             <div className="panel-header-row">
               <div className="file-tab">
-                <span className="file-icon">🐍</span>
+                <span className="file-icon-badge">PY</span>
                 <span className="file-name font-mono">metode_numerik.py</span>
                 <span className="file-badge">194 Baris</span>
               </div>

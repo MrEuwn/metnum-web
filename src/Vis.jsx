@@ -210,16 +210,16 @@ export default function Vis({ fn, hasil, kunci }) {
 
       {riw.length > 0 && (
         <div className="metric-strip">
-          <div className="metric-chip">
-            <span className="metric-label">Estimasi Akar Terakhir</span>
-            <span className="metric-val text-green font-mono">
-              {hasil?.akar != null ? num6(hasil.akar) : "-"}
+          <div className="metric-chip metric-root-hero">
+            <span className="metric-label">Akar Konvergen (x*)</span>
+            <span className="metric-val-hero font-mono text-emerald">
+              {hasil?.akar != null ? num6(hasil.akar) : "—"}
             </span>
           </div>
           <div className="metric-chip">
-            <span className="metric-label">Residu |f(x*)|</span>
+            <span className="metric-label">Residu Nilai |f(x*)|</span>
             <span className="metric-val text-cyan font-mono">
-              {hasil?.akar != null && fn ? Math.abs(fn(hasil.akar)).toExponential(4) : "-"}
+              {hasil?.akar != null && fn ? Math.abs(fn(hasil.akar)).toExponential(4) : "—"}
             </span>
           </div>
           <div className="metric-chip">
@@ -228,7 +228,7 @@ export default function Vis({ fn, hasil, kunci }) {
           </div>
           <div className="metric-chip">
             <span className="metric-label">Status Akhir</span>
-            <span className={`metric-val ${hasil?.gagal ? "text-red" : "text-green"}`}>
+            <span className={`metric-val ${hasil?.gagal ? "text-red" : "text-emerald"}`}>
               {hasil?.gagal ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
             </span>
           </div>

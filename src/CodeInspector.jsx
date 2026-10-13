@@ -18,15 +18,16 @@ export default function CodeInspector({ rentangAktif, onPilihRentang }) {
     <div className="bedah-container">
       <div className="bedah-header">
         <div>
-          <h3 className="bedah-title">Bedah Struktur &amp; Logika Kode</h3>
+          <div className="teori-kicker">ANALISIS STRUKTURAL KODE</div>
+          <h3 className="bedah-title">Bedah Arsitektur &amp; Logika</h3>
           <p className="redup kecil">
-            Klik modul di bawah untuk menelaah penjelasan algoritma dan menyorot baris kode terkait secara otomatis.
+            Pilih modul komputasi untuk membedah implementasi algoritma dan memproyeksikan rentang baris di editor.
           </p>
         </div>
       </div>
 
       <div className="accordion-list">
-        {BEDAH_KODE.map((item) => {
+        {BEDAH_KODE.map((item, idx) => {
           const aktif = bukaId === item.id;
           return (
             <div key={item.id} className={`accordion-card ${aktif ? "active" : ""}`}>
@@ -36,21 +37,38 @@ export default function CodeInspector({ rentangAktif, onPilihRentang }) {
                 onClick={() => toggle(item)}
               >
                 <div className="accordion-title-wrap">
-                  <span className="accordion-title-text">{item.judul}</span>
+                  <div className="accordion-title-row">
+                    <span className="accordion-idx font-mono">0{idx + 1}</span>
+                    <span className="accordion-title-text">{item.judul}</span>
+                  </div>
                   <div className="accordion-tags">
                     <span className="badge-tag">{item.tag}</span>
-                    <span className="badge-line">
-                      L{item.baris[0]}–{item.baris[1]}
+                    <span className="badge-line font-mono">
+                      BARIS {item.baris[0]}–{item.baris[1]}
                     </span>
                   </div>
                 </div>
-                <span className={`accordion-arrow ${aktif ? "rotate" : ""}`}>▾</span>
+                <div className={`accordion-indicator ${aktif ? "active" : ""}`}>
+                  <svg
+                    className={`accordion-chevron ${aktif ? "rotate" : ""}`}
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </button>
 
               {aktif && (
                 <div className="accordion-body">
                   <div className="accordion-summary-box">
-                    <span className="summary-label">Ringkasan Konsep:</span>
+                    <span className="summary-label">RINGKASAN METODE:</span>
                     <p className="summary-text">{item.ringkasan}</p>
                   </div>
                   <div className="accordion-detail-text">
@@ -62,6 +80,7 @@ export default function CodeInspector({ rentangAktif, onPilihRentang }) {
                       className="btn-focus-code"
                       onClick={() => onPilihRentang(item.baris)}
                     >
+                      <span className="btn-focus-dot" />
                       Fokuskan Baris {item.baris[0]}–{item.baris[1]} di Editor
                     </button>
                   </div>
