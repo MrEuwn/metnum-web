@@ -2,21 +2,43 @@ import React, { useEffect, useRef } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import KODE from "./metode_numerik.py?raw";
 
+function scrollChildIntoContainer(container, child, align = "nearest") {
+  if (!container || !child) return;
+  const cTop = container.scrollTop;
+  const cHeight = container.clientHeight;
+  const elTop = child.offsetTop;
+  const elHeight = child.offsetHeight;
+
+  if (align === "center") {
+    container.scrollTop = elTop - (cHeight - elHeight) / 2;
+  } else {
+    // nearest: only scroll if outside view
+    if (elTop < cTop) {
+      container.scrollTop = elTop - 10;
+    } else if (elTop + elHeight > cTop + cHeight) {
+      container.scrollTop = elTop + elHeight - cHeight + 10;
+    }
+  }
+}
+
 export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
   const containerRef = useRef(null);
 
-  // Auto-scroll saat baris eksekusi atau rentang bedah kode berubah
+  // Auto-scroll internal container ONLY — NEVER scrolls the window or document!
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     if (sorotanRentang && sorotanRentang.length === 2) {
       const [start] = sorotanRentang;
-      const el = containerRef.current?.querySelector(`[data-no="${start}"]`);
+      const el = container.querySelector(`[data-no="${start}"]`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        scrollChildIntoContainer(container, el, "center");
       }
     } else if (kejadian?.line) {
-      const el = containerRef.current?.querySelector(`[data-no="${kejadian.line}"]`);
+      const el = container.querySelector(`[data-no="${kejadian.line}"]`);
       if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        scrollChildIntoContainer(container, el, "nearest");
       }
     }
   }, [kejadian?.line, sorotanRentang]);

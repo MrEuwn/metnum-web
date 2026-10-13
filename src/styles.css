@@ -44,10 +44,21 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-base);
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 0%, #0d1629 0%, transparent 65%),
     linear-gradient(180deg, rgba(6, 9, 16, 0.7) 0%, rgba(6, 9, 16, 1) 100%);
   color: var(--text-primary);
@@ -104,9 +115,14 @@ body {
 }
 
 .app-shell {
+  height: 100%;
   max-width: 1560px;
   margin: 0 auto;
   padding: 14px 18px 48px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ----------------------------------------------------

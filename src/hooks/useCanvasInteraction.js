@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export function useCanvasInteraction({
   baseDomain = [-5, 5],
@@ -6,7 +6,7 @@ export function useCanvasInteraction({
   margins = { mL: 54, mR: 16, mT: 16, mB: 30 },
 }) {
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 }); // offset in world units
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [mouse, setMouse] = useState({ px: null, py: null, wx: null, wy: null, inside: false });
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -19,7 +19,6 @@ export function useCanvasInteraction({
 
   const isZoomedOrPanned = zoom !== 1 || pan.x !== 0 || pan.y !== 0;
 
-  // Hitung domain & range efektif dengan pan dan zoom
   const spanX = (baseDomain[1] - baseDomain[0]) / zoom;
   const centerX = (baseDomain[0] + baseDomain[1]) / 2 + pan.x;
   const domain = [centerX - spanX / 2, centerX + spanX / 2];
@@ -28,7 +27,6 @@ export function useCanvasInteraction({
   const centerY = (baseRange[0] + baseRange[1]) / 2 + pan.y;
   const range = [centerY - spanY / 2, centerY + spanY / 2];
 
-  // Helper konversi world <-> screen
   const getTransformers = useCallback(
     (W, H) => {
       const { mL, mR, mT, mB } = margins;
@@ -48,8 +46,12 @@ export function useCanvasInteraction({
 
   const handleWheel = useCallback(
     (e, W, H) => {
-      e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
+      if (e.cancelable) {
+        e.preventDefault();
+      }
+      const targetEl = e.currentTarget || e.target;
+      if (!targetEl) return;
+      const rect = targetEl.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
 
@@ -60,7 +62,6 @@ export function useCanvasInteraction({
       const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
       const nextZoom = Math.min(Math.max(0.1, zoom * factor), 100);
 
-      // Sesuaikan pan agar titik kursor tetap diam di world
       const nextSpanX = (baseDomain[1] - baseDomain[0]) / nextZoom;
       const nextSpanY = (baseRange[1] - baseRange[0]) / nextZoom;
 
@@ -85,7 +86,7 @@ export function useCanvasInteraction({
   );
 
   const handleMouseDown = useCallback((e) => {
-    if (e.button !== 0) return; // Hanya klik kiri
+    if (e.button !== 0) return;
     isDraggingRef.current = true;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     panStartRef.current = { ...pan };
@@ -93,7 +94,9 @@ export function useCanvasInteraction({
 
   const handleMouseMove = useCallback(
     (e, W, H) => {
-      const rect = e.currentTarget.getBoundingClientRect();
+      const targetEl = e.currentTarget || e.target;
+      if (!targetEl) return;
+      const rect = targetEl.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       const { toWorldX, toWorldY } = getTransformers(W, H);
@@ -145,8 +148,22 @@ export function useCanvasInteraction({
     mouse,
     resetView,
     getTransformers,
+    handleWheel,
+    /**
+     * Attach wheel listener as NON-PASSIVE native listener.
+     * React's onWheel is passive by default in Chrome → preventDefault() is
+     * silently ignored → page scrolls while zooming. Must attach natively.
+     */
+    attachWheel: (element, W, H) => {
+      if (!element) return () => {};
+      const native = (e) => {
+        e.preventDefault();
+        handleWheel(e, W, H);
+      };
+      element.addEventListener("wheel", native, { passive: false });
+      return () => element.removeEventListener("wheel", native);
+    },
     eventHandlers: (W, H) => ({
-      onWheel: (e) => handleWheel(e, W, H),
       onMouseDown: handleMouseDown,
       onMouseMove: (e) => handleMouseMove(e, W, H),
       onMouseUp: handleMouseUp,

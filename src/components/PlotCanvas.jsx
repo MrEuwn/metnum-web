@@ -41,7 +41,6 @@ export default function PlotCanvas({
 
   const riw = hasil?.riwayat || [];
 
-  // Hitung domain & range dasar dari fokus data
   const { baseDomain, baseRange } = useMemo(() => {
     const fokus = hasil?.fokus?.length ? hasil.fokus : [-2, 2];
     let loX = Math.min(...fokus);
@@ -59,7 +58,6 @@ export default function PlotCanvas({
     loX -= padX;
     hiX += padX;
 
-    // Evaluasi sampel y untuk perkiraan tinggi kurva
     let yMin = 0;
     let yMax = 0;
     if (fn) {
@@ -94,7 +92,7 @@ export default function PlotCanvas({
     margins,
   });
 
-  const { domain, range, zoom, isZoomedOrPanned, mouse, resetView, getTransformers } =
+  const { domain, range, zoom, isZoomedOrPanned, mouse, resetView, getTransformers, attachWheel } =
     interaction;
 
   // Responsive ResizeObserver
@@ -116,10 +114,16 @@ export default function PlotCanvas({
     return () => ro.disconnect();
   }, []);
 
+  // Native non-passive wheel listener: guarantees window will NOT scroll on zoom!
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    return attachWheel(canvas, dimensions.width, dimensions.height);
+  }, [dimensions.width, dimensions.height, attachWheel]);
+
   // Hit-testing titik iterasi saat mouse bergerak
   useEffect(() => {
     if (!mouse.inside || mouse.px == null || mouse.py == null) {
-      if (hoveredIter != null) onHoverIter?.(null);
       return;
     }
     const { toScreenX, toScreenY } = getTransformers(dimensions.width, dimensions.height);
@@ -153,7 +157,6 @@ export default function PlotCanvas({
     onHoverIter,
   ]);
 
-  // Click on point to seek timeline
   const handleCanvasClick = useCallback(() => {
     if (hoveredIter != null) {
       onSeekIter?.(hoveredIter);
@@ -192,9 +195,8 @@ export default function PlotCanvas({
       const { ticks: ticksY } = getNiceTicks(range[0], range[1], 6);
 
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "#101a2c"; // Subtle instrument grid
+      ctx.strokeStyle = "#101a2c";
 
-      // Garis vertikal X
       ticksX.forEach((tx) => {
         const sx = toScreenX(tx);
         if (sx >= mL && sx <= W - mR) {
@@ -205,7 +207,6 @@ export default function PlotCanvas({
         }
       });
 
-      // Garis horizontal Y
       ticksY.forEach((ty) => {
         const sy = toScreenY(ty);
         if (sy >= mT && sy <= H - mB) {
@@ -268,7 +269,7 @@ export default function PlotCanvas({
         const dx = (domain[1] - domain[0]) / samples;
         const rangeSpan = range[1] - range[0];
 
-        ctx.strokeStyle = "#38bdf8"; // Electric cyan
+        ctx.strokeStyle = "#38bdf8";
         ctx.lineWidth = 2;
         ctx.beginPath();
 
@@ -285,8 +286,6 @@ export default function PlotCanvas({
           }
 
           const isValid = typeof y === "number" && isFinite(y) && !isNaN(y) && Math.abs(y) < 1e7;
-
-          // Deteksi lonjakan diskontinuitas/asimtot vertikal
           const isJump = prevY != null && Math.abs(y - prevY) > rangeSpan * 2.5;
 
           if (isValid && !isJump) {
@@ -330,11 +329,9 @@ export default function PlotCanvas({
           const sB = toScreenX(currRow.b);
           const sC = toScreenX(currRow.c);
 
-          // Arsiran interval [a, b]
           ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
           ctx.fillRect(Math.min(sA, sB), mT, Math.abs(sB - sA), plotH);
 
-          // Garis batas a dan b
           ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
           ctx.lineWidth = 1;
           ctx.setLineDash([4, 4]);
@@ -345,7 +342,6 @@ export default function PlotCanvas({
           ctx.lineTo(sB, H - mB);
           ctx.stroke();
 
-          // Garis tegak di c
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 1.5;
           ctx.setLineDash([2, 2]);
@@ -371,7 +367,6 @@ export default function PlotCanvas({
           ctx.lineTo(pB.x, pB.y);
           ctx.stroke();
 
-          // Titik ujung tali busur
           ctx.fillStyle = "#fbbf24";
           [pA, pB].forEach((pt) => {
             ctx.beginPath();
@@ -379,7 +374,6 @@ export default function PlotCanvas({
             ctx.fill();
           });
 
-          // Proyeksi titik potong c di y=0
           ctx.strokeStyle = "rgba(251, 191, 36, 0.5)";
           ctx.setLineDash([2, 3]);
           ctx.beginPath();
@@ -399,7 +393,6 @@ export default function PlotCanvas({
           const p0 = { x: toScreenX(x0), y: toScreenY(fx) };
           const p1 = { x: toScreenX(x1), y: toScreenY(0) };
 
-          // Garis singgung tangen memotong sumbu x di x1
           ctx.strokeStyle = "rgba(251, 191, 36, 0.9)";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
@@ -407,7 +400,6 @@ export default function PlotCanvas({
           ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
 
-          // Garis vertikal putus-putus turun/naik ke kurva di x1
           if (fn) {
             try {
               const fx1 = fn(x1);
@@ -438,7 +430,6 @@ export default function PlotCanvas({
           ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
 
-          // Tandai p0 dan p1
           ctx.fillStyle = "#fbbf24";
           [p0, p1].forEach((pt) => {
             ctx.beginPath();
@@ -462,13 +453,11 @@ export default function PlotCanvas({
         const baseAlpha = 0.25 + 0.65 * ((idx + 1) / riw.length);
 
         if (isHovered || isActive) {
-          // Halo glow
           ctx.fillStyle = isHovered ? "rgba(56, 189, 248, 0.25)" : "rgba(52, 211, 153, 0.25)";
           ctx.beginPath();
           ctx.arc(px, py, 10 + pulse * 2, 0, Math.PI * 2);
           ctx.fill();
 
-          // Ring berdenyut
           ctx.strokeStyle = isHovered ? "#38bdf8" : "#34d399";
           ctx.lineWidth = 2;
           ctx.beginPath();
@@ -492,7 +481,6 @@ export default function PlotCanvas({
         const px = toScreenX(hasil.akar);
         const py = toScreenY(0);
 
-        // Garis vertikal putus-putus
         ctx.strokeStyle = "#34d399";
         ctx.lineWidth = 1.5;
         ctx.setLineDash([4, 3]);
@@ -502,7 +490,6 @@ export default function PlotCanvas({
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Animated ring berdenyut pada akar x*
         const ringRadius = 7 + (pulse + 1) * 3;
         ctx.strokeStyle = "rgba(52, 211, 153, 0.7)";
         ctx.lineWidth = 1.5;
@@ -515,7 +502,6 @@ export default function PlotCanvas({
         ctx.arc(px, py, 4.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Label teks akar di bagian atas
         ctx.fillStyle = "#34d399";
         ctx.font = "bold 11px 'JetBrains Mono', monospace";
         const labelText = `Akar x* ≈ ${num6(hasil.akar)}`;
@@ -541,13 +527,11 @@ export default function PlotCanvas({
           ctx.stroke();
           ctx.setLineDash([]);
 
-          // Badge koordinat real-time di sumbu
           ctx.fillStyle = "#0b1322";
           ctx.strokeStyle = "#23395d";
           ctx.lineWidth = 1;
           ctx.font = "10px 'JetBrains Mono', monospace";
 
-          // Sumbu X
           const coordXText = mouse.wx?.toFixed(4) || "";
           const cwX = ctx.measureText(coordXText).width + 8;
           ctx.fillRect(mouse.px - cwX / 2, H - mB + 2, cwX, 16);
@@ -556,7 +540,6 @@ export default function PlotCanvas({
           ctx.textAlign = "center";
           ctx.fillText(coordXText, mouse.px, H - mB + 14);
 
-          // Sumbu Y
           const coordYText = mouse.wy?.toFixed(4) || "";
           const cwY = ctx.measureText(coordYText).width + 8;
           ctx.fillStyle = "#0b1322";
@@ -591,7 +574,6 @@ export default function PlotCanvas({
     getTransformers,
   ]);
 
-  // Data tooltip jika ada titik yang sedang di-hover
   const tooltipData = useMemo(() => {
     if (hoveredIter == null || !riw[hoveredIter]) return null;
     const r = riw[hoveredIter];
@@ -662,7 +644,6 @@ export default function PlotCanvas({
           {...interaction.eventHandlers(dimensions.width, dimensions.height)}
         />
 
-        {/* Floating Custom HTML Tooltip */}
         {tooltipData && (
           <div
             className="canvas-floating-tooltip font-mono"

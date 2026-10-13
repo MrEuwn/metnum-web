@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
+import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { num6 } from "../engine.js";
 
 export default function ConvergenceCanvas({
   hasil,
@@ -12,6 +13,8 @@ export default function ConvergenceCanvas({
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 500, height: 200 });
+  const hoveredRef = useRef(null);
+  hoveredRef.current = hoveredIter;
 
   const riw = hasil?.riwayat || [];
 
@@ -52,7 +55,44 @@ export default function ConvergenceCanvas({
 
   const margins = useMemo(() => ({ mL: 52, mR: 16, mT: 16, mB: 28 }), []);
 
-  // Hit-testing mouse hover
+  /**
+   * Mutable refs hold the latest render inputs so the draw loop can read them
+   * without re-running the effect (and without re-rendering React) on every
+   * mouse move. The canvas redraw is scheduled imperatively.
+   */
+  const stateRef = useRef({ errorSeries: [], margins });
+
+  // ResizeObserver
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        if (width > 50) {
+          setDimensions((prev) => {
+            // Guard against infinite resize loop (jitter source)
+            if (Math.abs(prev.width - Math.floor(width)) < 1) return prev;
+            return { width: Math.floor(width), height: 200 };
+          });
+        }
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Scheduled redraw trigger (stable identity, avoids re-render)
+  const [drawNonce, setDrawNonce] = useState(0);
+  const requestRedraw = useCallback(() => {
+    setDrawNonce((n) => (n + 1) % 1000000);
+  }, []);
+
+  // Keep the mutable state ref in sync every render
+  stateRef.current.errorSeries = errorSeries;
+  stateRef.current.margins = margins;
+
+  // Hit-testing mouse hover — uses refs, schedules imperative redraw only
   const handleMouseMove = (e) => {
     if (!errorSeries.length) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -74,18 +114,26 @@ export default function ConvergenceCanvas({
       }
     }
 
-    if (closestIdx !== hoveredIter) {
+    // Only call parent setter when the hovered index ACTUALLY changes.
+    // This breaks the setState → re-render → getBoundingClientRect → setState loop.
+    if (closestIdx !== hoveredRef.current) {
+      hoveredRef.current = closestIdx;
       onHoverIter?.(closestIdx);
+      requestRedraw();
     }
   };
 
   const handleMouseLeave = () => {
-    onHoverIter?.(null);
+    if (hoveredRef.current !== null) {
+      hoveredRef.current = null;
+      onHoverIter?.(null);
+      requestRedraw();
+    }
   };
 
   const handleClick = () => {
-    if (hoveredIter != null) {
-      onSeekIter?.(hoveredIter);
+    if (hoveredRef.current != null) {
+      onSeekIter?.(hoveredRef.current);
     }
   };
 
@@ -178,12 +226,12 @@ export default function ConvergenceCanvas({
     });
     ctx.stroke();
 
-    // 4. Titik-Titik Error tiap Iterasi
+    // 4. Titik-Titik Error tiap Iterasi (baca hover dari ref)
     errorSeries.forEach((_, idx) => {
       const sx = toScreenX(idx);
       const sy = toScreenY(logValues[idx]);
 
-      const isHovered = hoveredIter === idx;
+      const isHovered = hoveredRef.current === idx;
       const isActive = activeIter === idx + 1;
 
       if (isHovered || isActive) {
@@ -217,15 +265,7 @@ export default function ConvergenceCanvas({
         ctx.fillText(`i${idx + 1}`, sx, H - mB + 14);
       }
     });
-  }, [dimensions, errorSeries, margins, hoveredIter, activeIter]);
-
-  const activeHoverData = useMemo(() => {
-    if (hoveredIter == null || !errorSeries[hoveredIter]) return null;
-    return {
-      iter: hoveredIter + 1,
-      err: errorSeries[hoveredIter],
-    };
-  }, [hoveredIter, errorSeries]);
+  }, [dimensions, errorSeries, margins, hoveredIter, activeIter, drawNonce]);
 
   return (
     <div className="convergence-canvas-wrapper" ref={containerRef}>
@@ -234,11 +274,12 @@ export default function ConvergenceCanvas({
           <span className="conv-title font-mono">LAJU KONVERGENSI LOGARITMIK</span>
           <span className="conv-sub font-mono">log₁₀ |f(x)| vs. Iterasi (i)</span>
         </div>
-        {activeHoverData && (
-          <div className="conv-badge-hover font-mono">
-            Iterasi {activeHoverData.iter}: Error = {activeHoverData.err.toExponential(4)}
-          </div>
-        )}
+        {/* Badge reads from ref — fixed height slot, never re-flows layout on hover */}
+        <div className="conv-badge-hover font-mono">
+          {hoveredIter != null && errorSeries[hoveredIter]
+            ? `Iterasi ${hoveredIter + 1}: Error = ${errorSeries[hoveredIter].toExponential(4)}`
+            : "\u00A0"}
+        </div>
       </div>
 
       <canvas

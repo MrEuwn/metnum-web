@@ -21,16 +21,24 @@ export default function IterationTable({
   const kolom = KOLOM[kunci] || [];
   const riw = hasil?.riwayat || [];
 
-  // Auto-scroll baris aktif atau hovered ke dalam pandangan tabel
+  // Auto-scroll baris aktif saat playback timeline — HANYA internal scroll, TIDAK scroll window!
   useEffect(() => {
-    const targetIdx = hoveredIter != null ? hoveredIter : Math.max(0, activeIter - 1);
-    if (tableWrapRef.current) {
-      const el = tableWrapRef.current.querySelector(`[data-iter-row="${targetIdx}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (!activeIter || !tableWrapRef.current) return;
+    const targetIdx = Math.max(0, activeIter - 1);
+    const container = tableWrapRef.current;
+    const el = container.querySelector(`[data-iter-row="${targetIdx}"]`);
+    if (el) {
+      const cTop = container.scrollTop;
+      const cHeight = container.clientHeight;
+      const elTop = el.offsetTop;
+      const elHeight = el.offsetHeight;
+      if (elTop < cTop) {
+        container.scrollTop = elTop;
+      } else if (elTop + elHeight > cTop + cHeight) {
+        container.scrollTop = elTop + elHeight - cHeight;
       }
     }
-  }, [hoveredIter, activeIter]);
+  }, [activeIter]);
 
   return (
     <div className="tabel-section">
@@ -78,10 +86,7 @@ export default function IterationTable({
                     data-iter-row={idx}
                     className={rowClass}
                     onMouseEnter={() => onHoverIter?.(idx)}
-                    onMouseOver={() => onHoverIter?.(idx)}
-                    onPointerEnter={() => onHoverIter?.(idx)}
                     onMouseLeave={() => onHoverIter?.(null)}
-                    onPointerLeave={() => onHoverIter?.(null)}
                     onClick={() => onSeekIter?.(idx)}
                   >
                     {kolom.map(([jt, kk, des]) => {
