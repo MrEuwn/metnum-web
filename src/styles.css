@@ -1463,3 +1463,268 @@ body {
   color: var(--emerald);
   font-weight: 700;
 }
+
+/* ----------------------------------------------------
+   CANVAS DUAL LAYOUT (PLOT + CONVERGENCE)
+   ---------------------------------------------------- */
+.canvas-dual-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 980px) {
+  .canvas-dual-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.canvas-plot-col,
+.canvas-conv-col {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-header-bar,
+.convergence-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.canvas-title-group,
+.conv-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.canvas-title-label,
+.conv-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.05em;
+}
+
+.canvas-domain-pill,
+.conv-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
+.canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-reset-view {
+  background: var(--cyan-dim);
+  border: 1px solid var(--cyan-border);
+  color: var(--cyan);
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-reset-view:hover {
+  background: var(--cyan);
+  color: #060910;
+}
+
+.canvas-hint-shortcut {
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+
+.canvas-inner-relative {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.plot-canvas-element {
+  display: block;
+  background: #05080e;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+.convergence-canvas-element {
+  display: block;
+  background: #05080e;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.conv-badge-hover {
+  font-size: 10.5px;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid var(--cyan-border);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+/* Floating Rich Tooltip */
+.canvas-floating-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(11, 17, 30, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--cyan-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 150px;
+  transition: transform 0.1s ease-out;
+}
+
+.tooltip-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tt-label {
+  color: var(--text-muted);
+}
+.tt-val {
+  font-weight: 600;
+}
+
+.tooltip-hint {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  border-top: 1px dashed var(--line);
+  padding-top: 2px;
+}
+
+/* ----------------------------------------------------
+   ANIMATION: FLASH VARIABLE ON MUTATION
+   ---------------------------------------------------- */
+@keyframes flash-var {
+  0% {
+    background-color: rgba(56, 189, 248, 0.45);
+    border-color: var(--cyan);
+    transform: scale(1.04);
+  }
+  100% {
+    background-color: #070c16;
+    border-color: var(--line);
+    transform: scale(1);
+  }
+}
+
+.flash-var-update {
+  animation: flash-var 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Terminal Line Entry Animation */
+@keyframes terminal-line-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-terminal-line {
+  animation: terminal-line-in 0.15s ease-out forwards;
+}
+
+/* Converged Glow for Hero Metric Chip */
+.converged-glow {
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.18);
+  border-color: var(--emerald) !important;
+}
+
+/* Table Hover & Active Sync Styling */
+.tabel tr.baris-hovered {
+  background: rgba(56, 189, 248, 0.14) !important;
+  cursor: pointer;
+}
+.tabel tr.baris-hovered td {
+  color: #ffffff;
+}
+
+.tabel tr.baris-aktif {
+  background: rgba(52, 211, 153, 0.15) !important;
+  border-left: 3px solid var(--emerald);
+}
+.tabel tr.baris-aktif td {
+  color: var(--emerald);
+  font-weight: 700;
+}
+
+.tabel-empty-box {
+  padding: 16px;
+  text-align: center;
+  font-size: 11.5px;
+  background: #080d16;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.tabel-count-badge {
+  font-size: 9.5px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
+.dot-amber {
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+}
+
+/* Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

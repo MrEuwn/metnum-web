@@ -1,278 +1,161 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
+import PlotCanvas from "./components/PlotCanvas.jsx";
+import ConvergenceCanvas from "./components/ConvergenceCanvas.jsx";
+import IterationTable from "./components/IterationTable.jsx";
 import { num6 } from "./engine.js";
 
-const KOLOM = {
-  biseksi: [["Iterasi", "no"], ["a", "a"], ["b", "b"], ["c", "c"], ["f(c)", "fc"]],
-  regulafalsi: [["Iterasi", "no"], ["a", "a"], ["b", "b"], ["c", "c"], ["f(c)", "fc"]],
-  newtonraphson: [["Iterasi", "no"], ["x_n", "x0"], ["f(x_n)", "fx", 6], ["f'(x_n)", "t"]],
-  secant: [["Iterasi", "no"], ["x0", "x0"], ["x1", "x1"], ["x2", "x2"], ["f(x2)", "fx2"]],
-};
-
-export default function Vis({ fn, hasil, kunci }) {
-  const ref = useRef(null);
+function useCountUp(targetVal, duration = 350) {
+  const [displayVal, setDisplayVal] = useState(targetVal);
 
   useEffect(() => {
-    const cv = ref.current;
-    if (!cv || !fn) return;
-    const dpr = window.devicePixelRatio || 1;
-    const W = cv.clientWidth;
-    const H = 320;
-    cv.width = W * dpr;
-    cv.height = H * dpr;
-    const g = cv.getContext("2d");
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, W, H);
-
-    const fokus = hasil?.fokus?.length ? hasil.fokus : [-1, 1];
-    let lo = Math.min(...fokus);
-    let hi = Math.max(...fokus);
-    if (!isFinite(lo) || !isFinite(hi)) {
-      lo = -1;
-      hi = 1;
-    }
-    if (hi - lo < 1) {
-      const m = (lo + hi) / 2;
-      lo = m - 0.5;
-      hi = m + 0.5;
-    }
-    const pad = (hi - lo) * 0.15;
-    lo -= pad;
-    hi += pad;
-
-    const N = 600;
-    const titik = [];
-    let ymin = Infinity;
-    let ymax = -Infinity;
-    for (let k = 0; k <= N; k++) {
-      const x = lo + ((hi - lo) * k) / N;
-      let y;
-      try {
-        y = fn(x);
-      } catch {
-        y = NaN;
-      }
-      if (typeof y === "number" && isFinite(y) && Math.abs(y) < 1e7) {
-        titik.push([x, y]);
-        if (y < ymin) ymin = y;
-        if (y > ymax) ymax = y;
-      }
-    }
-    if (!titik.length) {
-      g.fillStyle = "#8b98a5";
-      g.font = "13px ui-monospace, monospace";
-      g.fillText("f(x) tidak dapat digambar pada rentang ini", 16, 30);
+    if (typeof targetVal !== "number" || !isFinite(targetVal)) {
+      setDisplayVal(targetVal);
       return;
     }
-    ymin = Math.min(ymin, 0);
-    ymax = Math.max(ymax, 0);
-    if (ymax - ymin < 1e-12) ymax = ymin + 1;
-    const yPad = (ymax - ymin) * 0.2;
-    ymin -= yPad;
-    ymax += yPad;
 
-    const mL = 54;
-    const mR = 16;
-    const mT = 16;
-    const mB = 30;
-    const X = (x) => mL + ((x - lo) / (hi - lo)) * (W - mL - mR);
-    const Y = (y) => H - mB - ((y - ymin) / (ymax - ymin)) * (H - mT - mB);
-
-    g.strokeStyle = "#1e2733";
-    g.lineWidth = 1;
-    for (let k = 0; k <= 5; k++) {
-      const yy = mT + ((H - mT - mB) * k) / 5;
-      const xx = mL + ((W - mL - mR) * k) / 5;
-      g.beginPath();
-      g.moveTo(mL, yy);
-      g.lineTo(W - mR, yy);
-      g.stroke();
-      g.beginPath();
-      g.moveTo(xx, mT);
-      g.lineTo(xx, H - mB);
-      g.stroke();
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayVal(targetVal);
+      return;
     }
 
-    // sumbu y = 0
-    g.strokeStyle = "#3b4a5a";
-    g.beginPath();
-    g.moveTo(mL, Y(0));
-    g.lineTo(W - mR, Y(0));
-    g.stroke();
-    g.fillStyle = "#8b98a5";
-    g.font = "11px ui-monospace, monospace";
-    g.fillText("0", mL - 18, Y(0) + 4);
-    g.fillText(lo.toFixed(2), mL, H - 10);
-    g.fillText(hi.toFixed(2), W - mR - 34, H - 10);
+    let start = null;
+    const startVal = displayVal && typeof displayVal === "number" ? displayVal : targetVal * 0.9;
 
-    // kurva f(x)
-    g.strokeStyle = "#7dd3fc";
-    g.lineWidth = 2;
-    g.beginPath();
-    let mulai = true;
-    for (const [x, y] of titik) {
-      const px = X(x);
-      const py = Y(Math.max(ymin, Math.min(ymax, y)));
-      if (mulai) {
-        g.moveTo(px, py);
-        mulai = false;
-      } else g.lineTo(px, py);
-    }
-    g.stroke();
-
-    // sebaran titik iterasi
-    const riw = hasil?.riwayat || [];
-    const kunciTitik =
-      kunci === "secant" ? "x2" : kunci === "newtonraphson" ? "x0" : "c";
-
-    // Garis lintasan konvergensi antar titik
-    if (riw.length > 1) {
-      g.strokeStyle = "rgba(134, 239, 172, 0.35)";
-      g.lineWidth = 1;
-      g.setLineDash([3, 3]);
-      g.beginPath();
-      riw.forEach((r, idx) => {
-        const x = r[kunciTitik];
-        if (typeof x !== "number" || !isFinite(x)) return;
-        const px = X(x);
-        const py = Y(0);
-        if (idx === 0) g.moveTo(px, py);
-        else g.lineTo(px, py);
-      });
-      g.stroke();
-      g.setLineDash([]);
-    }
-
-    riw.forEach((r, idx) => {
-      const x = r[kunciTitik];
-      if (typeof x !== "number" || !isFinite(x)) return;
-      const alpa = 0.35 + 0.65 * ((idx + 1) / riw.length);
-      const isAkhir = idx === riw.length - 1;
-      g.fillStyle = isAkhir ? "#86efac" : `rgba(134, 239, 172, ${alpa})`;
-      g.beginPath();
-      g.arc(X(x), Y(0), isAkhir ? 5 : 3.5, 0, Math.PI * 2);
-      g.fill();
-      if (isAkhir) {
-        g.strokeStyle = "#ffffff";
-        g.lineWidth = 1.5;
-        g.stroke();
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const current = startVal + (targetVal - startVal) * easeProgress;
+      setDisplayVal(current);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setDisplayVal(targetVal);
       }
-    });
+    };
 
-    // akar
-    if (typeof hasil?.akar === "number" && isFinite(hasil.akar)) {
-      const px = X(hasil.akar);
-      g.strokeStyle = "#86efac";
-      g.lineWidth = 1.5;
-      g.setLineDash([5, 4]);
-      g.beginPath();
-      g.moveTo(px, mT);
-      g.lineTo(px, H - mB);
-      g.stroke();
-      g.setLineDash([]);
-      g.fillStyle = "#86efac";
-      g.font = "bold 12px 'JetBrains Mono', monospace";
-      const teks = `Akar x* ≈ ${num6(hasil.akar)}`;
-      const wTeks = g.measureText(teks).width;
-      const posTeksX = Math.min(Math.max(px + 6, mL + 10), W - mR - wTeks - 10);
-      g.fillText(teks, posTeksX, mT + 14);
-    }
-  }, [fn, hasil, kunci]);
+    const frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [targetVal, duration]);
 
-  const kolom = KOLOM[kunci] || [];
+  return displayVal;
+}
+
+export default function Vis({
+  fn,
+  hasil,
+  kunci,
+  activeIter = 0,
+  hoveredIter = null,
+  onHoverIter,
+  onSeekIter,
+}) {
   const riw = hasil?.riwayat || [];
+  const animatedRoot = useCountUp(hasil?.akar);
+
+  const isConverged = hasil?.akar != null && !hasil?.gagal;
 
   return (
     <section className="panel visualizer-card">
       <div className="vis-header">
         <div>
-          <h3>Visualisasi Kurva f(x) &amp; Lintasan Konvergensi</h3>
+          <h3 className="vis-header-title">Visualisasi Geometri &amp; Analisis Konvergensi</h3>
           <p className="redup kecil">
-            Kurva f(x) dipetakan pada bidang kartesius bersama titik-titik proyeksi iterasi menuju akar.
+            Kurva bidang kartesius dilengkapi proyeksi geometri dinamis per metode, dipadukan dengan grafik konvergensi logaritmik dan tabel iterasi sinkron.
           </p>
         </div>
         <div className="vis-legend">
           <span className="legend-item">
-            <span className="legend-dot dot-cyan"></span> Kurva f(x)
+            <span className="legend-dot dot-cyan" /> Kurva f(x)
           </span>
           <span className="legend-item">
-            <span className="legend-dot dot-gray"></span> Sumbu y=0
+            <span className="legend-dot dot-amber" /> Geometri Langkah
           </span>
           <span className="legend-item">
-            <span className="legend-dot dot-green"></span> Titik Iterasi
+            <span className="legend-dot dot-green" /> Titik Iterasi
           </span>
           <span className="legend-item">
-            <span className="legend-dot dot-root"></span> Proyeksi Akar x*
+            <span className="legend-dot dot-root" /> Proyeksi Akar x*
           </span>
         </div>
       </div>
 
-      <canvas ref={ref} className="kanvas" />
+      {/* Dual Canvas Layout: Kartesius 2D + Konvergensi Logaritmik */}
+      <div className="canvas-dual-layout">
+        <div className="canvas-plot-col">
+          <PlotCanvas
+            fn={fn}
+            hasil={hasil}
+            kunci={kunci}
+            activeIter={activeIter}
+            hoveredIter={hoveredIter}
+            onHoverIter={onHoverIter}
+            onSeekIter={onSeekIter}
+          />
+        </div>
 
+        <div className="canvas-conv-col">
+          <ConvergenceCanvas
+            hasil={hasil}
+            fn={fn}
+            kunci={kunci}
+            activeIter={activeIter}
+            hoveredIter={hoveredIter}
+            onHoverIter={onHoverIter}
+            onSeekIter={onSeekIter}
+          />
+        </div>
+      </div>
+
+      {/* Hero Metric Readout Strip */}
       {riw.length > 0 && (
         <div className="metric-strip">
-          <div className="metric-chip metric-root-hero">
+          <div className={`metric-chip metric-root-hero ${isConverged ? "converged-glow" : ""}`}>
             <span className="metric-label">Akar Konvergen (x*)</span>
             <span className="metric-val-hero font-mono text-emerald">
-              {hasil?.akar != null ? num6(hasil.akar) : "—"}
+              {hasil?.akar != null
+                ? typeof animatedRoot === "number"
+                  ? num6(animatedRoot)
+                  : num6(hasil.akar)
+                : "—"}
             </span>
           </div>
+
           <div className="metric-chip">
             <span className="metric-label">Residu Nilai |f(x*)|</span>
             <span className="metric-val text-cyan font-mono">
               {hasil?.akar != null && fn ? Math.abs(fn(hasil.akar)).toExponential(4) : "—"}
             </span>
           </div>
+
           <div className="metric-chip">
             <span className="metric-label">Total Langkah Iterasi</span>
             <span className="metric-val text-white font-mono">{hasil?.iterasi ?? riw.length}</span>
           </div>
+
           <div className="metric-chip">
             <span className="metric-label">Status Akhir</span>
-            <span className={`metric-val ${hasil?.gagal ? "text-red" : "text-emerald"}`}>
+            <span
+              className={`metric-val ${
+                hasil?.gagal ? "text-red" : "text-emerald font-bold"
+              }`}
+            >
               {hasil?.gagal ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
             </span>
           </div>
         </div>
       )}
 
-      <div className="tabel-section">
-        <div className="tabel-header-bar">
-          <span className="tabel-title">Tabel Rekam Jejak Komputasi Iterasi</span>
-          <span className="redup kecil">{riw.length} baris tercatat</span>
-        </div>
-        {riw.length === 0 ? (
-          <p className="redup pad-12">Belum ada komputasi yang dieksekusi.</p>
-        ) : (
-          <div className="tabel-wrap">
-            <table className="tabel">
-              <thead>
-                <tr>
-                  {kolom.map(([jt]) => (
-                    <th key={jt}>{jt}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {riw.map((r, idx) => (
-                  <tr key={idx} className={idx === riw.length - 1 ? "baris-terakhir" : ""}>
-                    {kolom.map(([jt, kk, des]) => {
-                      let v = kk === "no" ? idx + 1 : r[kk];
-                      if (kk === "fc") v = fn(r.c);
-                      const sel =
-                        typeof v === "number"
-                          ? des === 6 && kk === "fx"
-                            ? v.toFixed(6)
-                            : num6(v)
-                          : v;
-                      return <td key={jt}>{sel}</td>;
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Synchronized Iteration Table */}
+      <IterationTable
+        hasil={hasil}
+        fn={fn}
+        kunci={kunci}
+        activeIter={activeIter}
+        hoveredIter={hoveredIter}
+        onHoverIter={onHoverIter}
+        onSeekIter={onSeekIter}
+      />
     </section>
   );
 }

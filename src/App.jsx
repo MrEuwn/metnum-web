@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import CodePane from "./CodePane.jsx";
 import Vis from "./Vis.jsx";
 import CodeInspector from "./CodeInspector.jsx";
 import TheoryCard from "./TheoryCard.jsx";
+import VariablePanel from "./components/VariablePanel.jsx";
+import TerminalPanel from "./components/TerminalPanel.jsx";
 import { METODE, buatF, jejakMain } from "./engine.js";
 import { PRESET_FUNGSI } from "./bedah.js";
 
@@ -24,6 +26,7 @@ export default function App() {
   const [sesi, setSesi] = useState({ events: [], hasil: null, fn: null });
   const [tabKanan, setTabKanan] = useState("simulasi"); // 'simulasi' | 'bedah' | 'teori'
   const [sorotanRentang, setSorotanRentang] = useState(null);
+  const [hoveredIter, setHoveredIter] = useState(null);
 
   const metode = METODE[kunci];
   const kunciMetode = kunci;
@@ -76,15 +79,17 @@ export default function App() {
       setMain(otomatis);
       setTabKanan("simulasi");
       setSorotanRentang(null);
+      setHoveredIter(null);
     } catch (e) {
       setGalat(e.message);
       setSesi({ events: [], hasil: null, fn: null });
       setIdx(-1);
       setMain(false);
+      setHoveredIter(null);
     }
   }
 
-  // putar otomatis
+  // Putar otomatis
   useEffect(() => {
     if (!main) return;
     if (idx >= sesi.events.length - 1) {
@@ -95,7 +100,7 @@ export default function App() {
     return () => clearTimeout(t);
   }, [main, idx, laju, sesi.events.length]);
 
-  // pintasan papan tulis
+  // Pintasan papan ketik
   useEffect(() => {
     const h = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
@@ -130,12 +135,20 @@ export default function App() {
     [sesi.events, idx]
   );
 
-  const konsolRef = useRef(null);
-  useEffect(() => {
-    if (konsolRef.current) {
-      konsolRef.current.scrollTop = konsolRef.current.scrollHeight;
-    }
-  }, [keluaran.length]);
+  const activeIter = kejadian?.vars?.iterasi ?? 0;
+
+  // Lompat langkah timeline saat baris tabel atau titik diklik
+  const handleSeekIter = useCallback(
+    (iterIdx) => {
+      if (!sesi.events.length) return;
+      setMain(false);
+      const targetEventIdx = sesi.events.findIndex((e) => e.vars?.iterasi === iterIdx + 1);
+      if (targetEventIdx >= 0) {
+        setIdx(targetEventIdx);
+      }
+    },
+    [sesi.events]
+  );
 
   // Status eksekusi badge
   const statusEksekusi = useMemo(() => {
@@ -155,7 +168,10 @@ export default function App() {
         <div className="header-inner">
           <div className="brand-group">
             <div className="brand-icon">
-              <span>ƒ(x)</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18" />
+                <path d="m19 9-5 5-4-4-3 3" />
+              </svg>
             </div>
             <div>
               <div className="brand-title-wrap">
@@ -194,6 +210,7 @@ export default function App() {
                     setIdx(-1);
                     setMain(false);
                     setSorotanRentang(null);
+                    setHoveredIter(null);
                   }}
                 >
                   <span className="algo-num">0{m.nomor}</span>
@@ -441,80 +458,8 @@ export default function App() {
               {/* TAB 1: Live Simulation State & Console */}
               {tabKanan === "simulasi" && (
                 <div className="simulasi-deck-wrap">
-                  {/* Active Execution State Card */}
-                  <div className="state-summary-card">
-                    <div className="state-card-header">
-                      <span className="card-tag">Call Stack &amp; Context</span>
-                      <span className="state-line font-mono">
-                        {kejadian ? `Baris ${kejadian.line}` : "Idle"}
-                      </span>
-                    </div>
-
-                    <div className="stack-badge font-mono">
-                      def: {kejadian ? kejadian.stack.join(" › ") : "menunggu eksekusi..."}
-                    </div>
-
-                    {/* Local Variables Grid */}
-                    <div className="vars-container">
-                      <span className="vars-label">Variabel Lokal Terkini:</span>
-                      {kejadian?.vars && Object.keys(kejadian.vars).length > 0 ? (
-                        <div className="vars-grid">
-                          {Object.entries(kejadian.vars).map(([k, v]) => (
-                            <div key={k} className="var-chip font-mono">
-                              <span className="var-key">{k}</span>
-                              <span className="var-val">
-                                {typeof v === "number" ? v.toFixed(6) : String(v)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="redup kecil pad-4">Variabel belum terisi.</p>
-                      )}
-                    </div>
-
-                    {/* Sub-function Call Logs */}
-                    {kejadian?.panggil && (
-                      <div className="call-logs-container">
-                        <span className="vars-label">Evaluasi Sub-Fungsi:</span>
-                        <div className="call-chips-wrap">
-                          {kejadian.panggil.map((s, i) => (
-                            <span key={i} className="call-chip font-mono">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Terminal Console Output Card */}
-                  <div className="terminal-card">
-                    <div className="terminal-header">
-                      <div className="terminal-dots">
-                        <span className="tdot tdot-red" />
-                        <span className="tdot tdot-yellow" />
-                        <span className="tdot tdot-green" />
-                      </div>
-                      <span className="terminal-title font-mono">STDOUT Terminal Python</span>
-                      <span className="redup kecil font-mono">{keluaran.length} baris</span>
-                    </div>
-
-                    <div className="terminal-console font-mono" ref={konsolRef}>
-                      {keluaran.length === 0 ? (
-                        <div className="terminal-empty redup">
-                          &gt; Output stdout Python akan muncul di sini saat simulasi berjalan...
-                        </div>
-                      ) : (
-                        keluaran.map((k, i) => (
-                          <div key={i} className="terminal-row">
-                            <span className="term-line-no">{k.line}</span>
-                            <span className="term-text">{k.teks.replace(/^\n/, "")}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                  <VariablePanel kejadian={kejadian} />
+                  <TerminalPanel keluaran={keluaran} />
                 </div>
               )}
 
@@ -533,7 +478,15 @@ export default function App() {
         </div>
 
         {/* Bottom Full-Width Visualization & Iteration Table */}
-        <Vis fn={sesi.fn} hasil={sesi.hasil} kunci={kunciMetode} />
+        <Vis
+          fn={sesi.fn}
+          hasil={sesi.hasil}
+          kunci={kunciMetode}
+          activeIter={activeIter}
+          hoveredIter={hoveredIter}
+          onHoverIter={setHoveredIter}
+          onSeekIter={handleSeekIter}
+        />
       </main>
     </div>
   );
