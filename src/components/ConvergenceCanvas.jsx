@@ -158,7 +158,7 @@ export default function ConvergenceCanvas({
     const plotH = Math.max(10, H - mT - mB);
 
     if (!errorSeries.length) {
-      ctx.fillStyle = "#475569";
+      ctx.fillStyle = "#a79d88";
       ctx.font = "11.5px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
       ctx.fillText("Menunggu komputasi iterasi...", W / 2, H / 2);
@@ -180,9 +180,9 @@ export default function ConvergenceCanvas({
 
     // 1. Grid Garis Logaritmik Y (10^0, 10^-2, 10^-4, 10^-6, dst)
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "#10192c";
+    ctx.strokeStyle = "#eeebe1";
     ctx.font = "9.5px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = "#7d7462";
     ctx.textAlign = "right";
 
     for (let exp = minLog; exp <= maxLog; exp += 2) {
@@ -199,7 +199,7 @@ export default function ConvergenceCanvas({
     const tolLog = Math.log10(0.00001); // -5
     if (tolLog >= minLog && tolLog <= maxLog) {
       const tolY = toScreenY(tolLog);
-      ctx.strokeStyle = "rgba(251, 191, 36, 0.7)";
+      ctx.strokeStyle = "rgba(176, 125, 10, 0.7)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -208,13 +208,13 @@ export default function ConvergenceCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = "#b07d0a";
       ctx.textAlign = "left";
       ctx.fillText("Toleransi ε = 10⁻⁵", mL + 8, tolY - 5);
     }
 
     // 3. Garis Kurva Penurunan Error
-    ctx.strokeStyle = "#38bdf8";
+    ctx.strokeStyle = "#c9a227";
     ctx.lineWidth = 2;
     ctx.beginPath();
 
@@ -235,7 +235,7 @@ export default function ConvergenceCanvas({
       const isActive = activeIter === idx + 1;
 
       if (isHovered || isActive) {
-        ctx.fillStyle = isHovered ? "#38bdf8" : "#34d399";
+        ctx.fillStyle = isHovered ? "#c9a227" : "#0f8a4d";
         ctx.beginPath();
         ctx.arc(sx, sy, 5.5, 0, Math.PI * 2);
         ctx.fill();
@@ -244,7 +244,7 @@ export default function ConvergenceCanvas({
         ctx.lineWidth = 1.5;
         ctx.stroke();
       } else {
-        ctx.fillStyle = "#38bdf8";
+        ctx.fillStyle = "#c9a227";
         ctx.beginPath();
         ctx.arc(sx, sy, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -252,7 +252,7 @@ export default function ConvergenceCanvas({
     });
 
     // 5. Label Ticks Sumbu X (Nomor Iterasi)
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = "#7d7462";
     ctx.textAlign = "center";
     errorSeries.forEach((_, idx) => {
       if (

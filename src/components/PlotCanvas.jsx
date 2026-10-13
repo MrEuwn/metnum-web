@@ -195,7 +195,7 @@ export default function PlotCanvas({
       const { ticks: ticksY } = getNiceTicks(range[0], range[1], 6);
 
       ctx.lineWidth = 1;
-      ctx.strokeStyle = "#101a2c";
+      ctx.strokeStyle = "#eeebe1";
 
       ticksX.forEach((tx) => {
         const sx = toScreenX(tx);
@@ -220,7 +220,7 @@ export default function PlotCanvas({
       // Sumbu X (y = 0) menonjol
       if (0 >= range[0] && 0 <= range[1]) {
         const y0 = toScreenY(0);
-        ctx.strokeStyle = "#23395d";
+        ctx.strokeStyle = "#cdc6b2";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(mL, y0);
@@ -231,7 +231,7 @@ export default function PlotCanvas({
       // Sumbu Y (x = 0)
       if (0 >= domain[0] && 0 <= domain[1]) {
         const x0 = toScreenX(0);
-        ctx.strokeStyle = "#23395d";
+        ctx.strokeStyle = "#cdc6b2";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x0, mT);
@@ -240,7 +240,7 @@ export default function PlotCanvas({
       }
 
       // Label Angka Ticks Sumbu
-      ctx.fillStyle = "#64748b";
+      ctx.fillStyle = "#7d7462";
       ctx.font = "10px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
       ticksX.forEach((tx) => {
@@ -269,7 +269,7 @@ export default function PlotCanvas({
         const dx = (domain[1] - domain[0]) / samples;
         const rangeSpan = range[1] - range[0];
 
-        ctx.strokeStyle = "#38bdf8";
+        ctx.strokeStyle = "#c9a227";
         ctx.lineWidth = 2;
         ctx.beginPath();
 
@@ -329,10 +329,10 @@ export default function PlotCanvas({
           const sB = toScreenX(currRow.b);
           const sC = toScreenX(currRow.c);
 
-          ctx.fillStyle = "rgba(56, 189, 248, 0.08)";
+          ctx.fillStyle = "rgba(201, 162, 39, 0.08)";
           ctx.fillRect(Math.min(sA, sB), mT, Math.abs(sB - sA), plotH);
 
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
+          ctx.strokeStyle = "rgba(201, 162, 39, 0.4)";
           ctx.lineWidth = 1;
           ctx.setLineDash([4, 4]);
           ctx.beginPath();
@@ -342,7 +342,7 @@ export default function PlotCanvas({
           ctx.lineTo(sB, H - mB);
           ctx.stroke();
 
-          ctx.strokeStyle = "#fbbf24";
+          ctx.strokeStyle = "#14110c";
           ctx.lineWidth = 1.5;
           ctx.setLineDash([2, 2]);
           ctx.beginPath();
@@ -360,21 +360,21 @@ export default function PlotCanvas({
           const pB = { x: toScreenX(currRow.b), y: toScreenY(fb) };
           const pC = { x: toScreenX(currRow.c), y: toScreenY(0) };
 
-          ctx.strokeStyle = "rgba(251, 191, 36, 0.85)";
+          ctx.strokeStyle = "rgba(20, 17, 12, 0.85)";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(pA.x, pA.y);
           ctx.lineTo(pB.x, pB.y);
           ctx.stroke();
 
-          ctx.fillStyle = "#fbbf24";
+          ctx.fillStyle = "#14110c";
           [pA, pB].forEach((pt) => {
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
             ctx.fill();
           });
 
-          ctx.strokeStyle = "rgba(251, 191, 36, 0.5)";
+          ctx.strokeStyle = "rgba(20, 17, 12, 0.5)";
           ctx.setLineDash([2, 3]);
           ctx.beginPath();
           ctx.moveTo(pC.x, mT);
@@ -393,7 +393,7 @@ export default function PlotCanvas({
           const p0 = { x: toScreenX(x0), y: toScreenY(fx) };
           const p1 = { x: toScreenX(x1), y: toScreenY(0) };
 
-          ctx.strokeStyle = "rgba(251, 191, 36, 0.9)";
+          ctx.strokeStyle = "rgba(20, 17, 12, 0.9)";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
@@ -404,7 +404,7 @@ export default function PlotCanvas({
             try {
               const fx1 = fn(x1);
               const p1Curve = { x: toScreenX(x1), y: toScreenY(fx1) };
-              ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+              ctx.strokeStyle = "rgba(201, 162, 39, 0.5)";
               ctx.setLineDash([3, 3]);
               ctx.beginPath();
               ctx.moveTo(p1.x, p1.y);
@@ -423,14 +423,14 @@ export default function PlotCanvas({
           const p1 = { x: toScreenX(currRow.x1), y: toScreenY(fx1) };
           const p2 = { x: toScreenX(currRow.x2), y: toScreenY(0) };
 
-          ctx.strokeStyle = "rgba(251, 191, 36, 0.85)";
+          ctx.strokeStyle = "rgba(20, 17, 12, 0.85)";
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(p0.x, p0.y);
           ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
 
-          ctx.fillStyle = "#fbbf24";
+          ctx.fillStyle = "#14110c";
           [p0, p1].forEach((pt) => {
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
@@ -453,12 +453,12 @@ export default function PlotCanvas({
         const baseAlpha = 0.25 + 0.65 * ((idx + 1) / riw.length);
 
         if (isHovered || isActive) {
-          ctx.fillStyle = isHovered ? "rgba(56, 189, 248, 0.25)" : "rgba(52, 211, 153, 0.25)";
+          ctx.fillStyle = isHovered ? "rgba(201, 162, 39, 0.25)" : "rgba(15, 138, 77, 0.25)";
           ctx.beginPath();
           ctx.arc(px, py, 10 + pulse * 2, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.strokeStyle = isHovered ? "#38bdf8" : "#34d399";
+          ctx.strokeStyle = isHovered ? "#c9a227" : "#0f8a4d";
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(px, py, 6, 0, Math.PI * 2);
@@ -469,7 +469,7 @@ export default function PlotCanvas({
           ctx.arc(px, py, 3.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          ctx.fillStyle = `rgba(52, 211, 153, ${baseAlpha})`;
+          ctx.fillStyle = `rgba(15, 138, 77, ${baseAlpha})`;
           ctx.beginPath();
           ctx.arc(px, py, 3.5, 0, Math.PI * 2);
           ctx.fill();
@@ -481,7 +481,7 @@ export default function PlotCanvas({
         const px = toScreenX(hasil.akar);
         const py = toScreenY(0);
 
-        ctx.strokeStyle = "#34d399";
+        ctx.strokeStyle = "#0f8a4d";
         ctx.lineWidth = 1.5;
         ctx.setLineDash([4, 3]);
         ctx.beginPath();
@@ -491,18 +491,18 @@ export default function PlotCanvas({
         ctx.setLineDash([]);
 
         const ringRadius = 7 + (pulse + 1) * 3;
-        ctx.strokeStyle = "rgba(52, 211, 153, 0.7)";
+        ctx.strokeStyle = "rgba(15, 138, 77, 0.7)";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(px, py, ringRadius, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.fillStyle = "#34d399";
+        ctx.fillStyle = "#0f8a4d";
         ctx.beginPath();
         ctx.arc(px, py, 4.5, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#34d399";
+        ctx.fillStyle = "#0f8a4d";
         ctx.font = "bold 11px 'JetBrains Mono', monospace";
         const labelText = `Akar x* ≈ ${num6(hasil.akar)}`;
         const wLabel = ctx.measureText(labelText).width;
@@ -515,7 +515,7 @@ export default function PlotCanvas({
       // 6. Crosshair Mengikuti Mouse
       if (mouse.inside && mouse.px != null && mouse.py != null) {
         if (mouse.px >= mL && mouse.px <= W - mR && mouse.py >= mT && mouse.py <= H - mB) {
-          ctx.strokeStyle = "rgba(148, 163, 184, 0.3)";
+          ctx.strokeStyle = "rgba(125, 116, 98, 0.3)";
           ctx.lineWidth = 1;
           ctx.setLineDash([2, 2]);
 
@@ -527,8 +527,8 @@ export default function PlotCanvas({
           ctx.stroke();
           ctx.setLineDash([]);
 
-          ctx.fillStyle = "#0b1322";
-          ctx.strokeStyle = "#23395d";
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "#cdc6b2";
           ctx.lineWidth = 1;
           ctx.font = "10px 'JetBrains Mono', monospace";
 
@@ -536,16 +536,16 @@ export default function PlotCanvas({
           const cwX = ctx.measureText(coordXText).width + 8;
           ctx.fillRect(mouse.px - cwX / 2, H - mB + 2, cwX, 16);
           ctx.strokeRect(mouse.px - cwX / 2, H - mB + 2, cwX, 16);
-          ctx.fillStyle = "#38bdf8";
+          ctx.fillStyle = "#c9a227";
           ctx.textAlign = "center";
           ctx.fillText(coordXText, mouse.px, H - mB + 14);
 
           const coordYText = mouse.wy?.toFixed(4) || "";
           const cwY = ctx.measureText(coordYText).width + 8;
-          ctx.fillStyle = "#0b1322";
+          ctx.fillStyle = "#ffffff";
           ctx.fillRect(mL - cwY - 2, mouse.py - 8, cwY, 16);
           ctx.strokeRect(mL - cwY - 2, mouse.py - 8, cwY, 16);
-          ctx.fillStyle = "#38bdf8";
+          ctx.fillStyle = "#c9a227";
           ctx.textAlign = "right";
           ctx.fillText(coordYText, mL - 6, mouse.py + 4);
         }

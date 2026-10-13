@@ -60,12 +60,7 @@ export default function Vis({
   return (
     <section className="panel visualizer-card">
       <div className="vis-header">
-        <div>
-          <h3 className="vis-header-title">Visualisasi Geometri &amp; Analisis Konvergensi</h3>
-          <p className="redup kecil">
-            Kurva bidang kartesius dilengkapi proyeksi geometri dinamis per metode, dipadukan dengan grafik konvergensi logaritmik dan tabel iterasi sinkron.
-          </p>
-        </div>
+        <h3 className="vis-header-title">Visualisasi &amp; Analisis Konvergensi</h3>
         <div className="vis-legend">
           <span className="legend-item">
             <span className="legend-dot dot-cyan" /> Kurva f(x)
@@ -77,7 +72,7 @@ export default function Vis({
             <span className="legend-dot dot-green" /> Titik Iterasi
           </span>
           <span className="legend-item">
-            <span className="legend-dot dot-root" /> Proyeksi Akar x*
+            <span className="legend-dot dot-root" /> Akar x*
           </span>
         </div>
       </div>

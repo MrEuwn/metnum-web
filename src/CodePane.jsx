@@ -51,7 +51,7 @@ export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
 
   return (
     <div className="kode-container-wrap" ref={containerRef}>
-      <Highlight theme={themes.vsDark} code={KODE.replace(/\n$/, "")} language="python">
+      <Highlight theme={themes.vsLight} code={KODE.replace(/\n$/, "")} language="python">
         {({ tokens, getLineProps, getTokenProps }) => (
           <pre className="kode">
             <code>
