@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PlotCanvas from "./components/PlotCanvas.jsx";
 import ConvergenceCanvas from "./components/ConvergenceCanvas.jsx";
+import SurfaceCanvas from "./components/SurfaceCanvas.jsx";
 import IterationTable from "./components/IterationTable.jsx";
 import { num6 } from "./engine.js";
 
@@ -52,6 +53,7 @@ export default function Vis({
 }) {
   const riw = hasil?.riwayat || [];
   const animatedRoot = useCountUp(hasil?.akar);
+  const [modeView, setModeView] = useState("2d");
 
   const isConverged = hasil?.akar != null && !hasil?.gagal;
 
@@ -80,32 +82,73 @@ export default function Vis({
         </div>
       </div>
 
-      {/* Dual Canvas Layout: Kartesius 2D + Konvergensi Logaritmik */}
-      <div className="canvas-dual-layout">
-        <div className="canvas-plot-col">
-          <PlotCanvas
-            fn={fn}
-            hasil={hasil}
-            kunci={kunci}
-            activeIter={activeIter}
-            hoveredIter={hoveredIter}
-            onHoverIter={onHoverIter}
-            onSeekIter={onSeekIter}
-          />
-        </div>
-
-        <div className="canvas-conv-col">
-          <ConvergenceCanvas
-            hasil={hasil}
-            fn={fn}
-            kunci={kunci}
-            activeIter={activeIter}
-            hoveredIter={hoveredIter}
-            onHoverIter={onHoverIter}
-            onSeekIter={onSeekIter}
-          />
-        </div>
+      {/* Toggle Mode Visualisasi */}
+      <div className="vis-mode-toggle">
+        <button
+          type="button"
+          className={`vis-mode-btn font-mono ${modeView === "2d" ? "active" : ""}`}
+          onClick={() => setModeView("2d")}
+        >
+          Bidang 2D
+        </button>
+        <button
+          type="button"
+          className={`vis-mode-btn font-mono ${modeView === "3d" ? "active" : ""}`}
+          onClick={() => setModeView("3d")}
+        >
+          Permukaan 3D
+        </button>
       </div>
+
+      {modeView === "2d" ? (
+        /* Dual Canvas Layout: Kartesius 2D + Konvergensi Logaritmik */
+        <div className="canvas-dual-layout">
+          <div className="canvas-plot-col">
+            <PlotCanvas
+              fn={fn}
+              hasil={hasil}
+              kunci={kunci}
+              activeIter={activeIter}
+              hoveredIter={hoveredIter}
+              onHoverIter={onHoverIter}
+              onSeekIter={onSeekIter}
+            />
+          </div>
+
+          <div className="canvas-conv-col">
+            <ConvergenceCanvas
+              hasil={hasil}
+              fn={fn}
+              kunci={kunci}
+              activeIter={activeIter}
+              hoveredIter={hoveredIter}
+              onHoverIter={onHoverIter}
+              onSeekIter={onSeekIter}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="canvas-surface-layout">
+          <SurfaceCanvas
+            fn={fn}
+            hasil={hasil}
+            kunci={kunci}
+            activeIter={activeIter}
+            hoveredIter={hoveredIter}
+          />
+          <div className="canvas-conv-col">
+            <ConvergenceCanvas
+              hasil={hasil}
+              fn={fn}
+              kunci={kunci}
+              activeIter={activeIter}
+              hoveredIter={hoveredIter}
+              onHoverIter={onHoverIter}
+              onSeekIter={onSeekIter}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Hero Metric Readout Strip */}
       {riw.length > 0 && (

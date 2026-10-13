@@ -35,7 +35,7 @@
   --amber-dim: rgba(251, 191, 36, 0.12);
 
   /* Typography scale */
-  --font-display: "Bricolage Grotesque", -apple-system, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --font-body: "Manrope", -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -58,9 +58,6 @@ body {
 body {
   margin: 0;
   background-color: var(--bg-base);
-  background-image:
-    radial-gradient(circle at 50% 0%, #0d1629 0%, transparent 65%),
-    linear-gradient(180deg, rgba(6, 9, 16, 0.7) 0%, rgba(6, 9, 16, 1) 100%);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 13.5px;
@@ -153,11 +150,11 @@ body {
   height: 38px;
   border-radius: 6px;
   background: var(--bg-card);
-  border: 1px solid var(--line-active);
+  border: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--cyan);
+  color: var(--text-secondary);
 }
 
 .brand-title-wrap {
@@ -170,10 +167,17 @@ body {
 .brand-title {
   font-family: var(--font-display);
   font-size: 19px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
   color: var(--text-primary);
+}
+
+.brand-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .badge-academic {
@@ -193,6 +197,7 @@ body {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--text-muted);
+  font-style: italic;
 }
 
 /* Status Pill */
@@ -208,6 +213,7 @@ body {
   border: 1px solid var(--line);
   background: var(--bg-surface);
   letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .status-indicator-dot {
@@ -1743,4 +1749,106 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ----------------------------------------------------
+   SURFACE 3D VISUALIZATION (isometric Canvas 2D)
+   ---------------------------------------------------- */
+.canvas-surface-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.surface-canvas-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.surface-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.surface-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.surface-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.05em;
+}
+
+.surface-sub {
+  font-size: 10px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
+.surface-badge {
+  font-size: 10.5px;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid var(--cyan-border);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.surface-canvas-element {
+  display: block;
+  width: 100%;
+  border-radius: 3px;
+}
+
+.surface-empty {
+  margin-top: 8px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Toggle mode visualisasi 2D <-> 3D */
+.vis-mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: var(--bg-input);
+}
+
+.vis-mode-btn {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.vis-mode-btn:hover {
+  color: var(--text-secondary);
+}
+
+.vis-mode-btn.active {
+  color: var(--cyan);
+  background: var(--cyan-dim);
 }
