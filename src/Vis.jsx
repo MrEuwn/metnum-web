@@ -123,20 +123,46 @@ export default function Vis({ fn, hasil, kunci }) {
     const riw = hasil?.riwayat || [];
     const kunciTitik =
       kunci === "secant" ? "x2" : kunci === "newtonraphson" ? "x0" : "c";
+
+    // Garis lintasan konvergensi antar titik
+    if (riw.length > 1) {
+      g.strokeStyle = "rgba(134, 239, 172, 0.35)";
+      g.lineWidth = 1;
+      g.setLineDash([3, 3]);
+      g.beginPath();
+      riw.forEach((r, idx) => {
+        const x = r[kunciTitik];
+        if (typeof x !== "number" || !isFinite(x)) return;
+        const px = X(x);
+        const py = Y(0);
+        if (idx === 0) g.moveTo(px, py);
+        else g.lineTo(px, py);
+      });
+      g.stroke();
+      g.setLineDash([]);
+    }
+
     riw.forEach((r, idx) => {
       const x = r[kunciTitik];
       if (typeof x !== "number" || !isFinite(x)) return;
-      const alpa = 0.25 + 0.75 * ((idx + 1) / riw.length);
-      g.fillStyle = `rgba(134, 239, 172, ${alpa})`;
+      const alpa = 0.35 + 0.65 * ((idx + 1) / riw.length);
+      const isAkhir = idx === riw.length - 1;
+      g.fillStyle = isAkhir ? "#86efac" : `rgba(134, 239, 172, ${alpa})`;
       g.beginPath();
-      g.arc(X(x), Y(0), 3.5, 0, Math.PI * 2);
+      g.arc(X(x), Y(0), isAkhir ? 5 : 3.5, 0, Math.PI * 2);
       g.fill();
+      if (isAkhir) {
+        g.strokeStyle = "#ffffff";
+        g.lineWidth = 1.5;
+        g.stroke();
+      }
     });
 
     // akar
     if (typeof hasil?.akar === "number" && isFinite(hasil.akar)) {
       const px = X(hasil.akar);
       g.strokeStyle = "#86efac";
+      g.lineWidth = 1.5;
       g.setLineDash([5, 4]);
       g.beginPath();
       g.moveTo(px, mT);
@@ -144,10 +170,11 @@ export default function Vis({ fn, hasil, kunci }) {
       g.stroke();
       g.setLineDash([]);
       g.fillStyle = "#86efac";
-      g.font = "12px ui-monospace, monospace";
-      const teks = `akar ≈ ${num6(hasil.akar)}`;
+      g.font = "bold 12px 'JetBrains Mono', monospace";
+      const teks = `Akar x* ≈ ${num6(hasil.akar)}`;
       const wTeks = g.measureText(teks).width;
-      g.fillText(teks, Math.min(px + 6, W - mR - wTeks), mT + 12);
+      const posTeksX = Math.min(Math.max(px + 6, mL + 10), W - mR - wTeks - 10);
+      g.fillText(teks, posTeksX, mT + 14);
     }
   }, [fn, hasil, kunci]);
 
@@ -155,36 +182,97 @@ export default function Vis({ fn, hasil, kunci }) {
   const riw = hasil?.riwayat || [];
 
   return (
-    <section className="panel">
-      <h3>Grafik f(x) &amp; jejak iterasi</h3>
+    <section className="panel visualizer-card">
+      <div className="vis-header">
+        <div>
+          <h3>Visualisasi Kurva f(x) &amp; Lintasan Konvergensi</h3>
+          <p className="redup kecil">
+            Kurva f(x) dipetakan pada bidang kartesius bersama titik-titik proyeksi iterasi menuju akar.
+          </p>
+        </div>
+        <div className="vis-legend">
+          <span className="legend-item">
+            <span className="legend-dot dot-cyan"></span> Kurva f(x)
+          </span>
+          <span className="legend-item">
+            <span className="legend-dot dot-gray"></span> Sumbu y=0
+          </span>
+          <span className="legend-item">
+            <span className="legend-dot dot-green"></span> Titik Iterasi
+          </span>
+          <span className="legend-item">
+            <span className="legend-dot dot-root"></span> Proyeksi Akar x*
+          </span>
+        </div>
+      </div>
+
       <canvas ref={ref} className="kanvas" />
-      {riw.length === 0 ? (
-        <p className="redup">Belum ada iterasi{hasil?.gagal ? ` — ${hasil.pesan}` : ""}.</p>
-      ) : (
-        <div className="tabel-wrap">
-          <table className="tabel">
-            <thead>
-              <tr>
-                {kolom.map(([jt]) => (
-                  <th key={jt}>{jt}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {riw.map((r, idx) => (
-                <tr key={idx}>
-                  {kolom.map(([jt, kk, des]) => {
-                    let v = kk === "no" ? idx + 1 : r[kk];
-                    if (kk === "fc") v = fn(r.c);
-                    const sel = typeof v === "number" ? (des === 6 && kk === "fx" ? v.toFixed(6) : num6(v)) : v;
-                    return <td key={jt}>{sel}</td>;
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+      {riw.length > 0 && (
+        <div className="metric-strip">
+          <div className="metric-chip">
+            <span className="metric-label">Estimasi Akar Terakhir</span>
+            <span className="metric-val text-green font-mono">
+              {hasil?.akar != null ? num6(hasil.akar) : "-"}
+            </span>
+          </div>
+          <div className="metric-chip">
+            <span className="metric-label">Residu |f(x*)|</span>
+            <span className="metric-val text-cyan font-mono">
+              {hasil?.akar != null && fn ? Math.abs(fn(hasil.akar)).toExponential(4) : "-"}
+            </span>
+          </div>
+          <div className="metric-chip">
+            <span className="metric-label">Total Langkah Iterasi</span>
+            <span className="metric-val text-white font-mono">{hasil?.iterasi ?? riw.length}</span>
+          </div>
+          <div className="metric-chip">
+            <span className="metric-label">Status Akhir</span>
+            <span className={`metric-val ${hasil?.gagal ? "text-red" : "text-green"}`}>
+              {hasil?.gagal ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
+            </span>
+          </div>
         </div>
       )}
+
+      <div className="tabel-section">
+        <div className="tabel-header-bar">
+          <span className="tabel-title">Tabel Rekam Jejak Komputasi Iterasi</span>
+          <span className="redup kecil">{riw.length} baris tercatat</span>
+        </div>
+        {riw.length === 0 ? (
+          <p className="redup pad-12">Belum ada komputasi yang dieksekusi.</p>
+        ) : (
+          <div className="tabel-wrap">
+            <table className="tabel">
+              <thead>
+                <tr>
+                  {kolom.map(([jt]) => (
+                    <th key={jt}>{jt}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {riw.map((r, idx) => (
+                  <tr key={idx} className={idx === riw.length - 1 ? "baris-terakhir" : ""}>
+                    {kolom.map(([jt, kk, des]) => {
+                      let v = kk === "no" ? idx + 1 : r[kk];
+                      if (kk === "fc") v = fn(r.c);
+                      const sel =
+                        typeof v === "number"
+                          ? des === 6 && kk === "fx"
+                            ? v.toFixed(6)
+                            : num6(v)
+                          : v;
+                      return <td key={jt}>{sel}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

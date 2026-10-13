@@ -1,70 +1,82 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Highlight, themes } from "prism-react-renderer";
 import KODE from "./metode_numerik.py?raw";
 
-// Blok fungsi tiap metode + baris f()/df()/mutlak() yang dibuktikan lewat "kilat"
-const BLOK = {
-  f: [5, 7],
-  df: [11, 12],
-  mutlak: [16, 17],
-  biseksi: [52, 81],
-  regulafalsi: [20, 49],
-  newtonraphson: [84, 119],
-  secant: [122, 166],
-  main: [170, 194],
-};
+export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
+  const containerRef = useRef(null);
 
-function diSorot(no, kejadian) {
-  if (!kejadian) return false;
-  const { line, stack, kilat } = kejadian;
-  if (Array.isArray(kilat) && kilat.includes(no)) return true;
-  for (const s of stack) {
-    const r = BLOK[s];
-    if (r && no >= r[0] && no <= r[1]) return true;
-  }
-  return false;
-}
+  // Auto-scroll saat baris eksekusi atau rentang bedah kode berubah
+  useEffect(() => {
+    if (sorotanRentang && sorotanRentang.length === 2) {
+      const [start] = sorotanRentang;
+      const el = containerRef.current?.querySelector(`[data-no="${start}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    } else if (kejadian?.line) {
+      const el = containerRef.current?.querySelector(`[data-no="${kejadian.line}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  }, [kejadian?.line, sorotanRentang]);
 
-export default function CodePane({ kejadian, tampilSemua }) {
-  // hanya baris yang sedang dieksekusi (+ baris "kilat" sub-fungsi) yang disorot
-  const sorotan = new Set();
-  if (kejadian) {
-    sorotan.add(kejadian.line);
-    if (Array.isArray(kejadian.kilat)) kejadian.kilat.forEach((n) => sorotan.add(n));
-  }
+  const barisEksekusi = kejadian?.line;
+  const setKilat = new Set(kejadian?.kilat || []);
+
+  const [rentangAwal, rentangAkhir] =
+    sorotanRentang && sorotanRentang.length === 2 ? sorotanRentang : [-1, -1];
 
   return (
-    <Highlight theme={themes.vsDark} code={KODE.replace(/\n$/, "")} language="python">
-      {({ tokens, getLineProps, getTokenProps }) => (
-        <pre className="kode">
-          <code>
-            {tokens.map((line, i) => {
-              const no = i + 1;
-              const p = getLineProps({ line });
-              const { key: _k, className: _c, ...rest } = p;
-              const kelas = ["token-line", sorotan.has(no) ? "aktif" : ""].join(" ").trim();
-              return (
-                <div {...rest} key={no} className={kelas} data-no={no}>
-                  <span className="gap">{String(no).padStart(3, " ")}</span>
-                  <span className="isi">
-                    {line.map((tk, j) => {
-                      const tp = getTokenProps({ token: tk });
-                      const { key: _k2, ...rest2 } = tp;
-                      return tampilSemua ? (
-                        <span {...rest2} key={j} />
-                      ) : (
-                        <span className="diredupkan" key={j}>
-                          {tk.content.replace(/[^\s]/g, "·")}
-                        </span>
-                      );
-                    })}
-                  </span>
-                </div>
-              );
-            })}
-          </code>
-        </pre>
-      )}
-    </Highlight>
+    <div className="kode-container-wrap" ref={containerRef}>
+      <Highlight theme={themes.vsDark} code={KODE.replace(/\n$/, "")} language="python">
+        {({ tokens, getLineProps, getTokenProps }) => (
+          <pre className="kode">
+            <code>
+              {tokens.map((line, i) => {
+                const no = i + 1;
+                const p = getLineProps({ line });
+                const { key: _k, className: _c, ...rest } = p;
+
+                const isEksekusi = no === barisEksekusi;
+                const isKilat = setKilat.has(no);
+                const isRentang = no >= rentangAwal && no <= rentangAkhir;
+
+                const kelas = [
+                  "token-line",
+                  isEksekusi ? "aktif-eksekusi" : "",
+                  isRentang ? "aktif-rentang" : "",
+                  isKilat ? "aktif-kilat" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                return (
+                  <div
+                    {...rest}
+                    key={no}
+                    className={kelas}
+                    data-no={no}
+                    onClick={() => onKlikBaris?.(no)}
+                  >
+                    <span className="gap">
+                      {isEksekusi && <span className="titik-eksekusi" title="Baris aktif" />}
+                      {String(no).padStart(3, " ")}
+                    </span>
+                    <span className="isi">
+                      {line.map((tk, j) => {
+                        const tp = getTokenProps({ token: tk });
+                        const { key: _k2, ...rest2 } = tp;
+                        return <span {...rest2} key={j} />;
+                      })}
+                    </span>
+                  </div>
+                );
+              })}
+            </code>
+          </pre>
+        )}
+      </Highlight>
+    </div>
   );
 }
