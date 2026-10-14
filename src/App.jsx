@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import CodePane from "./CodePane.jsx";
 import Vis from "./Vis.jsx";
-import CodeInspector from "./CodeInspector.jsx";
 import TheoryCard from "./TheoryCard.jsx";
 import VariablePanel from "./components/VariablePanel.jsx";
 import TerminalPanel from "./components/TerminalPanel.jsx";
 import { METODE, buatF, jejakMain } from "./engine.js";
-import { PRESET_FUNGSI } from "./bedah.js";
+import { PRESET_FUNGSI } from "./presets.js";
 
 const KECEPATAN = [
   ["Lambat", 1000],
@@ -24,8 +23,7 @@ export default function App() {
   const [laju, setLaju] = useState(550);
   const [galat, setGalat] = useState("");
   const [sesi, setSesi] = useState({ events: [], hasil: null, fn: null });
-  const [tabKanan, setTabKanan] = useState("simulasi"); // 'simulasi' | 'bedah' | 'teori'
-  const [sorotanRentang, setSorotanRentang] = useState(null);
+  const [tabKanan, setTabKanan] = useState("simulasi"); // 'simulasi' | 'teori'
   const [hoveredIter, setHoveredIter] = useState(null);
 
   const metode = METODE[kunci];
@@ -78,7 +76,6 @@ export default function App() {
       setIdx(0);
       setMain(otomatis);
       setTabKanan("simulasi");
-      setSorotanRentang(null);
       setHoveredIter(null);
     } catch (e) {
       setGalat(e.message);
@@ -209,7 +206,6 @@ export default function App() {
                     setSesi({ events: [], hasil: null, fn: null });
                     setIdx(-1);
                     setMain(false);
-                    setSorotanRentang(null);
                     setHoveredIter(null);
                   }}
                 >
@@ -404,17 +400,12 @@ export default function App() {
                 <span className="file-badge">194 Baris</span>
               </div>
               <div className="code-hint redup kecil">
-                {sorotanRentang
-                  ? `Sorotan Modul: L${sorotanRentang[0]}–L${sorotanRentang[1]}`
-                  : kejadian
-                  ? `Eksekusi Aktif: Baris ${kejadian.line}`
-                  : "Klik modul bedah kode atau jalankan simulasi"}
+                {kejadian ? `Eksekusi Aktif: Baris ${kejadian.line}` : "Jalankan simulasi untuk melihat eksekusi"}
               </div>
             </div>
 
             <CodePane
               kejadian={kejadian}
-              sorotanRentang={sorotanRentang}
               onKlikBaris={(no) => {
                 if (sesi.events.length) {
                   const targetIdx = sesi.events.findIndex((e) => e.line === no);
@@ -440,13 +431,6 @@ export default function App() {
               </button>
               <button
                 type="button"
-                className={`deck-tab-btn ${tabKanan === "bedah" ? "active" : ""}`}
-                onClick={() => setTabKanan("bedah")}
-              >
-                Bedah Struktur Kode
-              </button>
-              <button
-                type="button"
                 className={`deck-tab-btn ${tabKanan === "teori" ? "active" : ""}`}
                 onClick={() => setTabKanan("teori")}
               >
@@ -461,14 +445,6 @@ export default function App() {
                   <VariablePanel kejadian={kejadian} />
                   <TerminalPanel keluaran={keluaran} />
                 </div>
-              )}
-
-              {/* TAB 2: Deep Code Breakdown Accordion */}
-              {tabKanan === "bedah" && (
-                <CodeInspector
-                  rentangAktif={sorotanRentang}
-                  onPilihRentang={(rentang) => setSorotanRentang(rentang)}
-                />
               )}
 
               {/* TAB 3: Theoretical Analysis */}

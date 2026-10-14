@@ -21,7 +21,7 @@ function scrollChildIntoContainer(container, child, align = "nearest") {
   }
 }
 
-export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
+export default function CodePane({ kejadian, onKlikBaris }) {
   const containerRef = useRef(null);
 
   // Auto-scroll internal container ONLY — NEVER scrolls the window or document!
@@ -29,25 +29,16 @@ export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
     const container = containerRef.current;
     if (!container) return;
 
-    if (sorotanRentang && sorotanRentang.length === 2) {
-      const [start] = sorotanRentang;
-      const el = container.querySelector(`[data-no="${start}"]`);
-      if (el) {
-        scrollChildIntoContainer(container, el, "center");
-      }
-    } else if (kejadian?.line) {
+    if (kejadian?.line) {
       const el = container.querySelector(`[data-no="${kejadian.line}"]`);
       if (el) {
         scrollChildIntoContainer(container, el, "nearest");
       }
     }
-  }, [kejadian?.line, sorotanRentang]);
+  }, [kejadian?.line]);
 
   const barisEksekusi = kejadian?.line;
   const setKilat = new Set(kejadian?.kilat || []);
-
-  const [rentangAwal, rentangAkhir] =
-    sorotanRentang && sorotanRentang.length === 2 ? sorotanRentang : [-1, -1];
 
   return (
     <div className="kode-container-wrap" ref={containerRef}>
@@ -62,12 +53,10 @@ export default function CodePane({ kejadian, sorotanRentang, onKlikBaris }) {
 
                 const isEksekusi = no === barisEksekusi;
                 const isKilat = setKilat.has(no);
-                const isRentang = no >= rentangAwal && no <= rentangAkhir;
 
                 const kelas = [
                   "token-line",
                   isEksekusi ? "aktif-eksekusi" : "",
-                  isRentang ? "aktif-rentang" : "",
                   isKilat ? "aktif-kilat" : "",
                 ]
                   .filter(Boolean)
