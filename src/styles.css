@@ -1022,11 +1022,6 @@ body {
 /* ----------------------------------------------------
    TAB 2: BEDAH STRUKTUR KODE (ACCORDION)
    ---------------------------------------------------- */
-.bedah-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
 
 .teori-kicker {
   font-family: var(--font-mono);
@@ -1038,13 +1033,6 @@ body {
   margin-bottom: 2px;
 }
 
-.bedah-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 0 2px;
-  color: var(--text-primary);
-}
 
 .accordion-list {
   display: flex;

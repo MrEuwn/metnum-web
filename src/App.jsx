@@ -176,7 +176,7 @@ export default function App() {
                 <span className="badge-academic">STRUKTUR DATA &amp; METNUM</span>
               </div>
               <p className="brand-subtitle">
-                Eksplorasi Interaktif &amp; Bedah Struktur Kode Pencari Akar Persamaan Non-Linier
+                Eksplorasi Interaktif &amp; Visualisasi Pencari Akar Persamaan Non-Linier
               </p>
             </div>
           </div>
