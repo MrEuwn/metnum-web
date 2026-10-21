@@ -55,7 +55,7 @@ export default function Vis({
   const animatedRoot = useCountUp(hasil?.akar);
   const [modeView, setModeView] = useState("2d");
 
-  const isConverged = hasil?.akar != null && !hasil?.gagal;
+  const isConverged = hasil?.akar != null && !hasil?.gagal && !hasil?.tidakKonvergen;
 
   return (
     <section className="panel visualizer-card">
@@ -175,10 +175,10 @@ export default function Vis({
             <span className="metric-label">Status Akhir</span>
             <span
               className={`metric-val ${
-                hasil?.gagal ? "text-red" : "text-emerald font-bold"
+                !isConverged ? "text-red" : "text-emerald font-bold"
               }`}
             >
-              {hasil?.gagal ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
+              {!isConverged ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
             </span>
           </div>
         </div>

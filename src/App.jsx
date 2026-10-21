@@ -152,11 +152,11 @@ export default function App() {
     if (!sesi.events.length) return { teks: "Siap", kelas: "badge-siap" };
     if (main) return { teks: "Mengiterasi...", kelas: "badge-running" };
     if (idx === sesi.events.length - 1) {
-      if (sesi.hasil?.gagal) return { teks: "Gagal Konvergen", kelas: "badge-gagal" };
+      if (sesi.hasil?.gagal || sesi.hasil?.tidakKonvergen) return { teks: "Gagal Konvergen", kelas: "badge-gagal" };
       return { teks: "Konvergen (Selesai)", kelas: "badge-selesai" };
     }
     return { teks: "Dijeda (Langkah Manual)", kelas: "badge-jeda" };
-  }, [sesi.events.length, main, idx, sesi.hasil?.gagal]);
+  }, [sesi.events.length, main, idx, sesi.hasil?.gagal, sesi.hasil?.tidakKonvergen]);
 
   return (
     <div className="app-shell">

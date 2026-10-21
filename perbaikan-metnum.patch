@@ -1,0 +1,145 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index ab1e6d9..a34a5da 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -152,11 +152,11 @@ export default function App() {
+     if (!sesi.events.length) return { teks: "Siap", kelas: "badge-siap" };
+     if (main) return { teks: "Mengiterasi...", kelas: "badge-running" };
+     if (idx === sesi.events.length - 1) {
+-      if (sesi.hasil?.gagal) return { teks: "Gagal Konvergen", kelas: "badge-gagal" };
++      if (sesi.hasil?.gagal || sesi.hasil?.tidakKonvergen) return { teks: "Gagal Konvergen", kelas: "badge-gagal" };
+       return { teks: "Konvergen (Selesai)", kelas: "badge-selesai" };
+     }
+     return { teks: "Dijeda (Langkah Manual)", kelas: "badge-jeda" };
+-  }, [sesi.events.length, main, idx, sesi.hasil?.gagal]);
++  }, [sesi.events.length, main, idx, sesi.hasil?.gagal, sesi.hasil?.tidakKonvergen]);
+ 
+   return (
+     <div className="app-shell">
+diff --git a/src/Vis.jsx b/src/Vis.jsx
+index 37e9568..27dee97 100644
+--- a/src/Vis.jsx
++++ b/src/Vis.jsx
+@@ -55,7 +55,7 @@ export default function Vis({
+   const animatedRoot = useCountUp(hasil?.akar);
+   const [modeView, setModeView] = useState("2d");
+ 
+-  const isConverged = hasil?.akar != null && !hasil?.gagal;
++  const isConverged = hasil?.akar != null && !hasil?.gagal && !hasil?.tidakKonvergen;
+ 
+   return (
+     <section className="panel visualizer-card">
+@@ -175,10 +175,10 @@ export default function Vis({
+             <span className="metric-label">Status Akhir</span>
+             <span
+               className={`metric-val ${
+-                hasil?.gagal ? "text-red" : "text-emerald font-bold"
++                !isConverged ? "text-red" : "text-emerald font-bold"
+               }`}
+             >
+-              {hasil?.gagal ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
++              {!isConverged ? "Tidak Konvergen" : "Konvergen Terpenuhi"}
+             </span>
+           </div>
+         </div>
+diff --git a/src/cek/uji-input.mjs b/src/cek/uji-input.mjs
+new file mode 100644
+index 0000000..bf04f4c
+--- /dev/null
++++ b/src/cek/uji-input.mjs
+@@ -0,0 +1,27 @@
++// Uji regresi input fungsi sendiri. Jalankan: node src/cek/uji-input.mjs
++import assert from "node:assert/strict";
++import { METODE, buatF, num6 } from "../engine.js";
++
++const melempar = (fn, pola, ket) => assert.throws(fn, pola, ket);
++
++// 1. ^ bukan pangkat
++melempar(() => buatF("x^2 - 2"), /\*\*/, "x^2 harus ditolak dengan petunjuk **");
++// 2. minus unary sebelum pangkat: pesan harus memberi solusi
++melempar(() => buatF("-x**2 + 4"), /-\(x\*\*2\)/);
++assert.equal(buatF("-(x**2) + 4")(3), -5);
++// 3. nama tak dikenal & sintaks salah -> pesan Indonesia, bukan crash
++melempar(() => buatF("foo(x)"), /tidak bisa dievaluasi/);
++melempar(() => buatF("2x - 4"), /Sintaks f\(x\)/);
++// 4. NaN/Infinity tidak boleh lolos diam-diam
++const akar = buatF("x**0.5 - 2");
++melempar(() => akar(-1), /tidak terdefinisi/);
++melempar(() => METODE.biseksi.hitung(akar, { a: -1, b: 9 }, 1e-5, 100), /tidak terdefinisi/);
++// 5. batas iterasi habis harus ditandai tidakKonvergen (dipakai badge UI)
++const r = METODE.newtonraphson.hitung(buatF("x**2 + 1"), { x0: 1 }, 1e-5, 100);
++assert.equal(r.hasil.tidakKonvergen, true);
++// 6. pembulatan = f"{x:.6f}" Python (round-half-even pada tie eksak)
++for (const [v, py] of [[1.4140625, "1.414062"], [0.0078125, "0.007812"], [0.0000005, "0.000000"],
++  [-0.0000005, "-0.000000"], [2.5e-6, "0.000003"], [1.5e-6, "0.000002"], [-23593708.6134035, "-23593708.613403"], [4.236068, "4.236068"]])
++  assert.equal(num6(v), py, `num6(${v})`);
++
++console.log("semua uji input lulus");
+diff --git a/src/engine.js b/src/engine.js
+index f4f2489..e75713e 100644
+--- a/src/engine.js
++++ b/src/engine.js
+@@ -2,23 +2,25 @@
+ // Python membulatkan .5 ke angka genap (round-half-even); toFixed() JS menjauh dari nol.
+ export function num6(v) {
+   const n = Number(v);
+-  const k = n * 1e6;
+-  const r = Math.round(k);
+-  const pecahan = Math.abs(k % 1);
+-  if (Math.abs(pecahan - 0.5) < 1e-9) {
+-    const fl = Math.floor(k);
+-    const m = fl % 2 === 0 ? fl : fl + 1;
+-    const t = m < 0 ? "-" : "";
+-    const a = Math.abs(m);
+-    return `${t}${Math.floor(a / 1e6)}.${String(a % 1e6).padStart(6, "0")}`;
+-  }
+-  return n.toFixed(6);
++  const abs = Math.abs(n);
++  if (!Number.isFinite(n) || abs >= 1e21) return n.toFixed(6);
++  // toFixed(40) mengembalikan ekspansi desimal eksak dari double, jadi tie sejati
++  // (digit ke-7 = 5 dan sisanya nol semua) bisa dideteksi tanpa galat floating point.
++  const eks = abs.toFixed(40);
++  const m = /^(\d+)\.(\d{6})50*$/.exec(eks);
++  if (!m) return n.toFixed(6);
++  let big = BigInt(m[1] + m[2]);
++  if (big % 2n !== 0n) big += 1n; // round-half-even
++  const t = big.toString().padStart(7, "0");
++  return `${n < 0 ? "-" : ""}${t.slice(0, -6)}.${t.slice(-6)}`;
+ }
+ const pad7 = (n) => String(n).padStart(7);
+ const TAB = "\t";
+ 
+ /* ---------- f(x): eval ekspresi gaya Python di browser ---------- */
+ export function buatF(sumber) {
++  if (String(sumber).includes("^"))
++    throw new Error("Operator ^ bukan pangkat (di JavaScript berarti XOR). Pakai ** untuk pangkat, contoh: x**2.");
+   const bersih = String(sumber).replace(/\bmath\./g, "");
+   let fn;
+   try {
+@@ -30,11 +32,23 @@ const pi=Math.PI, e=Math.E;
+ return (${bersih});`
+     );
+   } catch (e) {
+-    throw new Error(`Sintaks f(x) tidak dikenali: ${e.message}. Ingat: pangkat di Python pakai ** (bukan ^).`);
++    const saran = /Unary operator/.test(e.message)
++      ? "JavaScript tidak mengizinkan minus langsung di depan pangkat. Tulis -(x**2) atau 0 - x**2."
++      : "Pangkat pakai ** dan perkalian wajib pakai * (contoh: 2*x).";
++    throw new Error(`Sintaks f(x) tidak dikenali: ${e.message}. ${saran}`);
++  }
++  let uji;
++  try {
++    uji = fn(0.5);
++  } catch (e) {
++    throw new Error(`f(x) tidak bisa dievaluasi: ${e.message}. Fungsi yang tersedia: sin, cos, tan, exp, log, sqrt, abs, pi, e, dll.`);
+   }
+-  const uji = fn(0.5);
+   if (typeof uji !== "number") throw new Error("f(x) harus menghasilkan sebuah angka.");
+-  return fn;
++  return (x) => {
++    const y = fn(x);
++    if (!Number.isFinite(y)) throw new Error(`f(x) tidak terdefinisi di x = ${x} (hasil: ${y}). Periksa domain fungsi dan selang yang dipakai.`);
++    return y;
++  };
+ }
+ 
+ const mutlak = (x) => (x >= 0 ? x : -x);

@@ -2,23 +2,25 @@
 // Python membulatkan .5 ke angka genap (round-half-even); toFixed() JS menjauh dari nol.
 export function num6(v) {
   const n = Number(v);
-  const k = n * 1e6;
-  const r = Math.round(k);
-  const pecahan = Math.abs(k % 1);
-  if (Math.abs(pecahan - 0.5) < 1e-9) {
-    const fl = Math.floor(k);
-    const m = fl % 2 === 0 ? fl : fl + 1;
-    const t = m < 0 ? "-" : "";
-    const a = Math.abs(m);
-    return `${t}${Math.floor(a / 1e6)}.${String(a % 1e6).padStart(6, "0")}`;
-  }
-  return n.toFixed(6);
+  const abs = Math.abs(n);
+  if (!Number.isFinite(n) || abs >= 1e21) return n.toFixed(6);
+  // toFixed(40) mengembalikan ekspansi desimal eksak dari double, jadi tie sejati
+  // (digit ke-7 = 5 dan sisanya nol semua) bisa dideteksi tanpa galat floating point.
+  const eks = abs.toFixed(40);
+  const m = /^(\d+)\.(\d{6})50*$/.exec(eks);
+  if (!m) return n.toFixed(6);
+  let big = BigInt(m[1] + m[2]);
+  if (big % 2n !== 0n) big += 1n; // round-half-even
+  const t = big.toString().padStart(7, "0");
+  return `${n < 0 ? "-" : ""}${t.slice(0, -6)}.${t.slice(-6)}`;
 }
 const pad7 = (n) => String(n).padStart(7);
 const TAB = "\t";
 
 /* ---------- f(x): eval ekspresi gaya Python di browser ---------- */
 export function buatF(sumber) {
+  if (String(sumber).includes("^"))
+    throw new Error("Operator ^ bukan pangkat (di JavaScript berarti XOR). Pakai ** untuk pangkat, contoh: x**2.");
   const bersih = String(sumber).replace(/\bmath\./g, "");
   let fn;
   try {
@@ -30,11 +32,23 @@ const pi=Math.PI, e=Math.E;
 return (${bersih});`
     );
   } catch (e) {
-    throw new Error(`Sintaks f(x) tidak dikenali: ${e.message}. Ingat: pangkat di Python pakai ** (bukan ^).`);
+    const saran = /Unary operator/.test(e.message)
+      ? "JavaScript tidak mengizinkan minus langsung di depan pangkat. Tulis -(x**2) atau 0 - x**2."
+      : "Pangkat pakai ** dan perkalian wajib pakai * (contoh: 2*x).";
+    throw new Error(`Sintaks f(x) tidak dikenali: ${e.message}. ${saran}`);
   }
-  const uji = fn(0.5);
+  let uji;
+  try {
+    uji = fn(0.5);
+  } catch (e) {
+    throw new Error(`f(x) tidak bisa dievaluasi: ${e.message}. Fungsi yang tersedia: sin, cos, tan, exp, log, sqrt, abs, pi, e, dll.`);
+  }
   if (typeof uji !== "number") throw new Error("f(x) harus menghasilkan sebuah angka.");
-  return fn;
+  return (x) => {
+    const y = fn(x);
+    if (!Number.isFinite(y)) throw new Error(`f(x) tidak terdefinisi di x = ${x} (hasil: ${y}). Periksa domain fungsi dan selang yang dipakai.`);
+    return y;
+  };
 }
 
 const mutlak = (x) => (x >= 0 ? x : -x);
