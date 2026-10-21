@@ -32,10 +32,20 @@ const pi=Math.PI, e=Math.E;
 return (${bersih});`
     );
   } catch (e) {
-    const saran = /Unary operator/.test(e.message)
-      ? "JavaScript tidak mengizinkan minus langsung di depan pangkat. Tulis -(x**2) atau 0 - x**2."
-      : "Pangkat pakai ** dan perkalian wajib pakai * (contoh: 2*x).";
-    throw new Error(`Sintaks f(x) tidak dikenali: ${e.message}. ${saran}`);
+    // JS menolak "-x**2" sebagai SyntaxError dengan pesan mesin berbahasa Inggris;
+    // untuk kasus ini pesannya diganti penuh agar alasannya jelas bagi pengguna.
+    if (/Unary operator/.test(e.message))
+      throw new Error(
+        `Tidak boleh ditulis seperti itu: minus tidak boleh menempel langsung di depan pangkat, ` +
+          `seperti -x**2 atau -sin(x)**2. Ini aturan tata bahasa JavaScript, bukan tanda bahwa ` +
+          `matematikanya salah — di Python bentuk itu sah dan dibaca sebagai -(x**2). ` +
+          `Tulis salah satu: -(x**2) atau 0 - x**2. Hati-hati: -x**2 berarti -(x**2), bukan (-x)**2; ` +
+          `keduanya memberi tanda berbeda. Contoh lengkap: -x**2 + 4 → -(x**2) + 4; ` +
+          `2*-x**2 → 2*-(x**2); -x**2*3 → -(x**2)*3.`
+      );
+    throw new Error(
+      `Sintaks f(x) tidak dikenali: ${e.message}. Pangkat pakai ** dan perkalian wajib pakai * (contoh: 2*x).`
+    );
   }
   let uji;
   try {

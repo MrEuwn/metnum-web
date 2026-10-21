@@ -6,9 +6,14 @@ const melempar = (fn, pola, ket) => assert.throws(fn, pola, ket);
 
 // 1. ^ bukan pangkat
 melempar(() => buatF("x^2 - 2"), /\*\*/, "x^2 harus ditolak dengan petunjuk **");
-// 2. minus unary sebelum pangkat: pesan harus memberi solusi
-melempar(() => buatF("-x**2 + 4"), /-\(x\*\*2\)/);
+// 2. minus unary sebelum pangkat: pesan harus menjelaskan ALASAN + memberi solusi, tanpa teks Inggris
+const pesanMinus = (() => { try { buatF("-x**2 + 4"); return ""; } catch (e) { return e.message; } })();
+for (const pola of [/Tidak boleh ditulis seperti itu/, /tata bahasa JavaScript/, /Python bentuk itu sah/, /-\(x\*\*2\)/, /bukan \(-x\)\*\*2/, /2\*-\(x\*\*2\)/])
+  assert.ok(pola.test(pesanMinus), `pesan minus kurang: ${pola} -> ${pesanMinus}`);
+assert.ok(!/Unary operator/.test(pesanMinus), "pesan raw JS berbahasa Inggris harus sudah dibuang");
+for (const s of ["-x**2", "2*-x**2", "-sin(x)**2", "-x**2*3"]) melempar(() => buatF(s), /Tidak boleh ditulis seperti itu/);
 assert.equal(buatF("-(x**2) + 4")(3), -5);
+assert.equal(buatF("(-x)**2 + 4")(3), 13); // (-x)**2 = +9, tanda berbeda dari -(x**2)
 // 3. nama tak dikenal & sintaks salah -> pesan Indonesia, bukan crash
 melempar(() => buatF("foo(x)"), /tidak bisa dievaluasi/);
 melempar(() => buatF("2x - 4"), /Sintaks f\(x\)/);
